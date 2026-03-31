@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Phase 4 Test Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        /* Drag and Drop */
+        .drag-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .drop-zone {
+            width: 200px;
+            height: 150px;
+            border: 2px dashed #999;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .drop-zone.drag-over {
+            background: #e0f0e0;
+            border-color: #4a4;
+        }
+
+        .draggable {
+            width: 80px;
+            height: 80px;
+            background: #4a90d9;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .draggable.dragging {
+            opacity: 0.5;
+        }
+
+        /* File Upload */
+        .upload-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* Mouse tracking */
+        .mouse-area {
+            width: 400px;
+            height: 200px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mouse-area:hover {
+            background: #e8e8f8;
+        }
+
+        #mouse-pos {
+            font-family: monospace;
+        }
+
+        /* Scroll area for mouse wheel */
+        .scroll-box {
+            width: 400px;
+            height: 150px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+
+        .scroll-content {
+            height: 800px;
+            padding: 10px;
+        }
+
+        /* Results display */
+        #results {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            min-height: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phase 4: Advanced Interactions</h1>
+
+    <!-- Section 1: Drag and Drop -->
+    <h2>Drag and Drop</h2>
+    <div class="drag-container">
+        <div class="drop-zone" id="source-zone">
+            <div class="draggable" id="drag-item" draggable="true">Drag Me</div>
+        </div>
+        <div class="drop-zone" id="target-zone">
+            <span id="target-label">Drop Here</span>
+        </div>
+    </div>
+    <div id="drag-status">Status: waiting</div>
+
+    <!-- Section 2: File Upload -->
+    <h2>File Upload</h2>
+    <div class="upload-section">
+        <label for="file-input">Choose file:</label>
+        <input type="file" id="file-input" name="file" />
+        <div id="upload-status">No file selected</div>
+    </div>
+    <div class="upload-section">
+        <label for="multi-file-input">Choose multiple files:</label>
+        <input type="file" id="multi-file-input" name="files" multiple />
+        <div id="multi-upload-status">No files selected</div>
+    </div>
+
+    <!-- Section 3: Download -->
+    <h2>Download</h2>
+    <a id="download-link" href="data:text/plain;base64,SGVsbG8gZnJvbSBrby1icm93c2VyIQ=="
+        download="test-download.txt">Download Test File</a>
+
+    <!-- Section 4: Mouse Operations -->
+    <h2>Mouse Tracking</h2>
+    <div class="mouse-area" id="mouse-area">
+        <span id="mouse-pos">Move mouse here</span>
+    </div>
+    <div id="mouse-events">Events: none</div>
+
+    <!-- Section 5: Mouse Wheel / Scroll -->
+    <h2>Mouse Wheel</h2>
+    <div class="scroll-box" id="scroll-box">
+        <div class="scroll-content">
+            <p>Line 1 - Top of scroll area</p>
+            <p>Line 2</p>
+            <p>Line 3</p>
+            <p>Line 4</p>
+            <p>Line 5</p>
+            <p>Line 6</p>
+            <p>Line 7</p>
+            <p>Line 8</p>
+            <p>Line 9</p>
+            <p>Line 10</p>
+            <p>Line 11</p>
+            <p>Line 12</p>
+            <p>Line 13</p>
+            <p>Line 14</p>
+            <p>Line 15</p>
+            <p>Line 16</p>
+            <p>Line 17</p>
+            <p>Line 18</p>
+            <p>Line 19</p>
+            <p>Line 20 - Bottom of scroll area</p>
+        </div>
+    </div>
+    <div id="scroll-pos">Scroll position: 0</div>
+
+    <!-- Results area -->
+    <div id="results">Ready</div>
+
+    <script>
+        const results = document.getElementById('results');
+        function log(msg) {
+            results.textContent = msg;
+        }
+
+        // --- Drag and Drop ---
+        const dragItem = document.getElementById('drag-item');
+        const sourceZone = document.getElementById('source-zone');
+        const targetZone = document.getElementById('target-zone');
+        const dragStatus = document.getElementById('drag-status');
+
+        dragItem.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', 'drag-item');
+            dragItem.classList.add('dragging');
+            dragStatus.textContent = 'Status: dragging';
+        });
+
+        dragItem.addEventListener('dragend', () => {
+            dragItem.classList.remove('dragging');
+        });
+
+        targetZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            targetZone.classList.add('drag-over');
+        });
+
+        targetZone.addEventListener('dragleave', () => {
+            targetZone.classList.remove('drag-over');
+        });
+
+        targetZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            targetZone.classList.remove('drag-over');
+            if (e.dataTransfer.getData('text/plain') === 'drag-item') {
+                targetZone.appendChild(dragItem);
+                document.getElementById('target-label').style.display = 'none';
+                dragStatus.textContent = 'Status: dropped';
+                log('Drag completed successfully');
+            }
+        });
+
+        // Also support mouse-based drag (non-HTML5 DnD)
+        let isDragging = false;
+        let dragOffsetX = 0, dragOffsetY = 0;
+
+        dragItem.addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                isDragging = true;
+                const rect = dragItem.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+                dragItem.style.position = 'fixed';
+                dragItem.style.zIndex = '1000';
+                dragStatus.textContent = 'Status: mouse-dragging';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                dragItem.style.left = (e.clientX - dragOffsetX) + 'px';
+                dragItem.style.top = (e.clientY - dragOffsetY) + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                const targetRect = targetZone.getBoundingClientRect();
+                if (e.clientX >= targetRect.left && e.clientX <= targetRect.right &&
+                    e.clientY >= targetRect.top && e.clientY <= targetRect.bottom) {
+                    dragItem.style.position = '';
+                    dragItem.style.zIndex = '';
+                    dragItem.style.left = '';
+                    dragItem.style.top = '';
+                    targetZone.appendChild(dragItem);
+                    document.getElementById('target-label').style.display = 'none';
+                    dragStatus.textContent = 'Status: dropped';
+                    log('Mouse drag completed successfully');
+                } else {
+                    dragItem.style.position = '';
+                    dragItem.style.zIndex = '';
+                    dragItem.style.left = '';
+                    dragItem.style.top = '';
+                    dragStatus.textContent = 'Status: drag cancelled';
+                }
+            }
+        });
+
+        // --- File Upload ---
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                document.getElementById('upload-status').textContent = 'Selected: ' + files[0].name;
+                log('File selected: ' + files[0].name);
+            }
+        });
+
+        document.getElementById('multi-file-input').addEventListener('change', (e) => {
+            const files = e.target.files;
+            const names = Array.from(files).map(f => f.name).join(', ');
+            document.getElementById('multi-upload-status').textContent = 'Selected: ' + names;
+            log('Files selected: ' + names);
+        });
+
+        // --- Mouse Tracking ---
+        const mouseArea = document.getElementById('mouse-area');
+        const mousePos = document.getElementById('mouse-pos');
+        const mouseEvents = document.getElementById('mouse-events');
+        let eventLog = [];
+
+        mouseArea.addEventListener('mousemove', (e) => {
+            mousePos.textContent = `x: ${e.clientX}, y: ${e.clientY}`;
+        });
+
+        mouseArea.addEventListener('mousedown', (e) => {
+            eventLog.push('mousedown:' + e.button);
+            mouseEvents.textContent = 'Events: ' + eventLog.join(', ');
+        });
+
+        mouseArea.addEventListener('mouseup', (e) => {
+            eventLog.push('mouseup:' + e.button);
+            mouseEvents.textContent = 'Events: ' + eventLog.join(', ');
+        });
+
+        mouseArea.addEventListener('click', (e) => {
+            eventLog.push('click');
+            mouseEvents.textContent = 'Events: ' + eventLog.join(', ');
+        });
+
+        mouseArea.addEventListener('wheel', (e) => {
+            eventLog.push('wheel:' + Math.round(e.deltaY));
+            mouseEvents.textContent = 'Events: ' + eventLog.join(', ');
+        });
+
+        // --- Scroll Box ---
+        const scrollBox = document.getElementById('scroll-box');
+        const scrollPosEl = document.getElementById('scroll-pos');
+
+        scrollBox.addEventListener('scroll', () => {
+            scrollPosEl.textContent = 'Scroll position: ' + Math.round(scrollBox.scrollTop);
+        });
+    </script>
+</body>
+
+</html>

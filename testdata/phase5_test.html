@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Phase 5 - Tabs & Storage Test</title>
+</head>
+
+<body>
+    <h1>Phase 5 Test Page</h1>
+
+    <!-- Storage test area -->
+    <div id="storage-section">
+        <h2>Storage Test</h2>
+        <button id="set-local"
+            onclick="localStorage.setItem('testKey', 'testValue'); document.getElementById('local-status').textContent='set'">Set
+            localStorage</button>
+        <button id="set-session"
+            onclick="sessionStorage.setItem('sessKey', 'sessValue'); document.getElementById('session-status').textContent='set'">Set
+            sessionStorage</button>
+        <p>Local status: <span id="local-status">none</span></p>
+        <p>Session status: <span id="session-status">none</span></p>
+    </div>
+
+    <!-- Cookie test area -->
+    <div id="cookie-section">
+        <h2>Cookie Test</h2>
+        <button id="set-cookie"
+            onclick="document.cookie='testCookie=cookieValue;path=/'; document.getElementById('cookie-status').textContent='set'">Set
+            Cookie</button>
+        <p>Cookie status: <span id="cookie-status">none</span></p>
+    </div>
+
+    <!-- Navigation link for tab test -->
+    <div id="link-section">
+        <h2>Navigation</h2>
+        <a id="link1" href="phase2_nav_a.html" target="_blank">Open Nav A in new tab</a>
+        <a id="link2" href="phase2_nav_b.html">Go to Nav B</a>
+    </div>
+
+    <script>
+        // Pre-populate some storage for testing
+        localStorage.setItem('presetKey', 'presetValue');
+        localStorage.setItem('anotherKey', 'anotherValue');
+        sessionStorage.setItem('sessionPreset', 'sessionPresetValue');
+    </script>
+</body>
+
+</html>

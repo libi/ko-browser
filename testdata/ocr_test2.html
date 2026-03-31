@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>OCR Test - Canvas Images</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #fff;
+        }
+
+        a {
+            display: inline-block;
+            margin: 15px;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>OCR Test - Canvas Rendered Images</h1>
+    <p>Links below have NO alt text, NO aria-label — text is baked into images:</p>
+
+    <!-- These links will have image children with text rendered via canvas -->
+    <a href="/search" id="link-search"></a>
+    <a href="/login" id="link-login"></a>
+    <a href="/settings" id="link-settings"></a>
+
+    <br><br>
+    <p>Normal link for comparison:</p>
+    <a href="/about">About Us</a>
+
+    <script>
+        function createTextImage(text, bgColor, width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width * 2;  // 2x for retina-quality
+            canvas.height = height * 2;
+            const ctx = canvas.getContext('2d');
+            // Background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            img.style.width = width + 'px';
+            img.style.height = height + 'px';
+            // NO alt attribute — intentionally inaccessible
+            return img;
+        }
+
+        document.getElementById('link-search').appendChild(createTextImage('Search', '#007bff', 160, 50));
+        document.getElementById('link-login').appendChild(createTextImage('Login', '#28a745', 160, 50));
+        document.getElementById('link-settings').appendChild(createTextImage('Settings', '#dc3545', 160, 50));
+    </script>
+</body>
+
+</html>

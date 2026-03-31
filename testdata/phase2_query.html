@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Phase2 Query Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 24px;
+        }
+
+        .hidden-box {
+            display: none;
+        }
+
+        .invisible-box {
+            visibility: hidden;
+        }
+
+        #info {
+            color: blue;
+            font-size: 16px;
+            margin: 12px 0;
+        }
+
+        #counter {
+            margin: 12px 0;
+        }
+
+        .item {
+            padding: 4px;
+            margin: 2px;
+            background: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="main-title">Phase2 Query Test</h1>
+    <p id="info" data-testid="info-para" data-custom="hello-attr">This is a <strong>test</strong> paragraph.</p>
+
+    <form id="demo-form">
+        <section>
+            <label>Username <input id="username" type="text" aria-label="Username" value="initial-value" /></label>
+        </section>
+        <section>
+            <label><input id="agree" type="checkbox" aria-label="Agree" /> I agree</label>
+        </section>
+        <section>
+            <label>Email <input id="email" type="email" aria-label="Email" disabled /></label>
+        </section>
+        <section>
+            <button id="submit-btn" type="button" aria-label="Submit">Submit</button>
+        </section>
+    </form>
+
+    <div class="hidden-box" id="hidden-el">I am hidden</div>
+    <div class="invisible-box" id="invisible-el">I am invisible</div>
+
+    <div id="counter">Count: 0</div>
+
+    <div class="item">Item 1</div>
+    <div class="item">Item 2</div>
+    <div class="item">Item 3</div>
+    <div class="item">Item 4</div>
+    <div class="item">Item 5</div>
+
+    <div id="dynamic-area"></div>
+
+    <script>
+        let count = 0;
+        document.getElementById('submit-btn').addEventListener('click', function () {
+            count++;
+            document.getElementById('counter').textContent = 'Count: ' + count;
+        });
+
+        // Delayed dynamic content for wait testing
+        setTimeout(function () {
+            document.getElementById('dynamic-area').innerHTML = '<p id="delayed-text">Dynamic content loaded!</p>';
+            window.dynamicReady = true;
+        }, 1500);
+    </script>
+</body>
+
+</html>

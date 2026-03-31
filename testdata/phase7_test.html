@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 7 Test Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .section {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+
+        #dynamic-content {
+            background: #eef;
+            padding: 10px;
+        }
+
+        #counter-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #color-box {
+            width: 100px;
+            height: 100px;
+            background: blue;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phase 7 Test</h1>
+
+    <!-- Static content for snapshot baseline -->
+    <div class="section" id="static-section">
+        <h2>Static Section</h2>
+        <p id="static-text">This text does not change.</p>
+        <button id="btn-change">Change Content</button>
+        <button id="btn-add">Add Element</button>
+    </div>
+
+    <!-- Dynamic content for diff testing -->
+    <div class="section" id="dynamic-content">
+        <h2>Dynamic Section</h2>
+        <p id="dynamic-text">Original text here.</p>
+        <span id="counter-display">0</span>
+    </div>
+
+    <!-- Color box for screenshot diff -->
+    <div class="section" id="visual-section">
+        <h2>Visual Section</h2>
+        <div id="color-box"></div>
+        <button id="btn-color">Change Color</button>
+    </div>
+
+    <!-- Storage section -->
+    <div class="section" id="storage-section">
+        <h2>Storage Section</h2>
+        <button id="btn-set-storage">Set Storage</button>
+        <span id="storage-display">No data</span>
+    </div>
+
+    <script>
+        // Counter for dynamic changes
+        let counter = 0;
+
+        // Change Content button: modifies dynamic text
+        document.getElementById('btn-change').addEventListener('click', function () {
+            counter++;
+            document.getElementById('dynamic-text').textContent = 'Changed text #' + counter;
+            document.getElementById('counter-display').textContent = counter.toString();
+        });
+
+        // Add Element button: appends a new paragraph
+        document.getElementById('btn-add').addEventListener('click', function () {
+            const p = document.createElement('p');
+            p.textContent = 'Added element at ' + new Date().toISOString();
+            p.className = 'added-element';
+            document.getElementById('dynamic-content').appendChild(p);
+        });
+
+        // Change Color button: toggles the color box
+        document.getElementById('btn-color').addEventListener('click', function () {
+            const box = document.getElementById('color-box');
+            box.style.background = box.style.background === 'red' ? 'blue' : 'red';
+        });
+
+        // Set Storage button: writes to localStorage and sets a cookie
+        document.getElementById('btn-set-storage').addEventListener('click', function () {
+            localStorage.setItem('phase7_key', 'phase7_value');
+            localStorage.setItem('phase7_ts', Date.now().toString());
+            document.cookie = 'phase7_cookie=hello; path=/';
+            document.getElementById('storage-display').textContent = 'Storage set!';
+        });
+
+        // On load, display localStorage data if present
+        window.addEventListener('load', function () {
+            const val = localStorage.getItem('phase7_key');
+            if (val) {
+                document.getElementById('storage-display').textContent = 'Stored: ' + val;
+            }
+        });
+    </script>
+</body>
+
+</html>

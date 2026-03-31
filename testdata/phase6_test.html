@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 6 Test Page</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        #viewport-info {
+            padding: 10px;
+            background: #eee;
+            margin: 10px 0;
+        }
+
+        #media-info {
+            padding: 10px;
+            background: #ddf;
+            margin: 10px 0;
+        }
+
+        #geo-info {
+            padding: 10px;
+            background: #dfd;
+            margin: 10px 0;
+        }
+
+        .highlight-box {
+            padding: 20px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+
+        #clipboard-area {
+            width: 300px;
+            height: 60px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #222;
+                color: #eee;
+            }
+
+            #media-info {
+                background: #335;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phase 6 Test</h1>
+
+    <!-- Viewport Info -->
+    <div id="viewport-info">
+        Viewport: <span id="vp-width"></span>x<span id="vp-height"></span>
+    </div>
+
+    <!-- Media Info -->
+    <div id="media-info">
+        Color Scheme: <span id="color-scheme"></span>
+    </div>
+
+    <!-- Geolocation Info -->
+    <div id="geo-info">
+        Geo: <span id="geo-lat">unknown</span>, <span id="geo-lon">unknown</span>
+    </div>
+
+    <!-- Highlight target -->
+    <button id="highlight-btn" class="highlight-box">Highlight Me</button>
+
+    <!-- Clipboard test area -->
+    <textarea id="clipboard-area" placeholder="Clipboard test area"></textarea>
+    <button id="copy-btn" onclick="copyText()">Copy</button>
+    <button id="paste-btn" onclick="pasteText()">Paste</button>
+
+    <!-- Console test area -->
+    <button id="log-btn" onclick="console.log('test-log-message')">Trigger Log</button>
+    <button id="warn-btn" onclick="console.warn('test-warning-message')">Trigger Warning</button>
+    <button id="error-btn" onclick="throwError()">Trigger Error</button>
+
+    <!-- Network test -->
+    <div id="online-status">Online: <span id="online-val"></span></div>
+
+    <script>
+        // Display viewport size
+        function updateViewport() {
+            document.getElementById('vp-width').textContent = window.innerWidth;
+            document.getElementById('vp-height').textContent = window.innerHeight;
+        }
+        updateViewport();
+        window.addEventListener('resize', updateViewport);
+
+        // Display color scheme
+        function updateColorScheme() {
+            var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.getElementById('color-scheme').textContent = dark ? 'dark' : 'light';
+        }
+        updateColorScheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateColorScheme);
+
+        // Online status
+        function updateOnline() {
+            document.getElementById('online-val').textContent = navigator.onLine ? 'true' : 'false';
+        }
+        updateOnline();
+        window.addEventListener('online', updateOnline);
+        window.addEventListener('offline', updateOnline);
+
+        // Clipboard helpers
+        async function copyText() {
+            var text = document.getElementById('clipboard-area').value;
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                console.error('Copy failed:', e);
+            }
+        }
+
+        async function pasteText() {
+            try {
+                var text = await navigator.clipboard.readText();
+                document.getElementById('clipboard-area').value = text;
+            } catch (e) {
+                console.error('Paste failed:', e);
+            }
+        }
+
+        // Error throwing
+        function throwError() {
+            throw new Error('test-page-error');
+        }
+
+        // Geolocation
+        function getGeo() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    document.getElementById('geo-lat').textContent = pos.coords.latitude.toFixed(4);
+                    document.getElementById('geo-lon').textContent = pos.coords.longitude.toFixed(4);
+                }, function (err) {
+                    document.getElementById('geo-lat').textContent = 'error';
+                    document.getElementById('geo-lon').textContent = err.message;
+                });
+            }
+        }
+        // Auto-request geolocation
+        getGeo();
+
+        // Store initial viewport in localStorage for tests
+        localStorage.setItem('phase6_loaded', 'true');
+    </script>
+</body>
+
+</html>

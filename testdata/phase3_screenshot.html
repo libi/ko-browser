@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Phase 3 Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .hidden-el {
+            display: none;
+        }
+
+        #content-area {
+            min-height: 200px;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+
+        nav {
+            background: #333;
+            padding: 10px;
+        }
+
+        nav a {
+            color: white;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+
+        form {
+            margin: 20px 0;
+        }
+
+        label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        input,
+        select {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phase 3 Test Page</h1>
+
+    <nav aria-label="Main Navigation">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+    </nav>
+
+    <main>
+        <section aria-label="Search Section">
+            <h2>Search</h2>
+            <form>
+                <label for="search-input">Search Query</label>
+                <input type="text" id="search-input" placeholder="Type to search..." aria-label="Search Query">
+                <button type="submit" id="search-btn">Search</button>
+            </form>
+        </section>
+
+        <section aria-label="Cards Section">
+            <h2>Items</h2>
+            <div class="card" id="card-1">
+                <h3>Card One</h3>
+                <p>First card content</p>
+                <button>View Details</button>
+            </div>
+            <div class="card" id="card-2">
+                <h3>Card Two</h3>
+                <p>Second card content</p>
+                <button>View Details</button>
+            </div>
+            <div class="card" id="card-3">
+                <h3>Card Three</h3>
+                <p>Third card content</p>
+                <button>View Details</button>
+            </div>
+        </section>
+
+        <section aria-label="Form Section">
+            <h2>User Form</h2>
+            <form id="user-form">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" aria-label="Username">
+
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" aria-label="Email Address">
+
+                <label for="role-select">User Role</label>
+                <select id="role-select" name="role" aria-label="User Role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                    <option value="moderator">Moderator</option>
+                </select>
+
+                <label>
+                    <input type="checkbox" id="agree-terms" name="agree" aria-label="Agree to Terms">
+                    Agree to Terms
+                </label>
+
+                <button type="submit" id="submit-form">Submit Form</button>
+            </form>
+        </section>
+
+        <div id="content-area">
+            <p id="dynamic-text">This is dynamic content area</p>
+        </div>
+
+        <section aria-label="Links Section">
+            <h2>External Links</h2>
+            <ul>
+                <li><a href="https://example.com" id="link-example">Example.com</a></li>
+                <li><a href="https://test.com" id="link-test">Test.com</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Footer content &copy; 2026</p>
+    </footer>
+
+    <script>
+        // Helper for eval testing
+        window.testValue = 42;
+        window.getTestData = function () {
+            return JSON.stringify({ status: "ok", count: 3 });
+        };
+    </script>
+</body>
+
+</html>

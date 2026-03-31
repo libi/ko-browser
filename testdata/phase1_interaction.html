@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Phase1 Interaction Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 24px;
+        }
+
+        section {
+            margin-bottom: 16px;
+        }
+
+        .spacer {
+            height: 1200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Phase1 Interaction Test</h1>
+    <form id="demo-form">
+        <section><label>Name <input id="name" aria-label="Name" /></label></section>
+        <section><label>Notes <textarea id="notes" aria-label="Notes"></textarea></label></section>
+        <section>
+            <label>Color
+                <select id="color" aria-label="Color">
+                    <option value="red">Red</option>
+                    <option value="blue">Blue</option>
+                </select>
+            </label>
+        </section>
+        <section><label><input id="terms" type="checkbox" aria-label="Terms" /> Accept terms</label></section>
+        <div id="status" aria-live="polite">idle</div>
+        <div class="spacer"></div>
+        <button id="submit" type="submit" onmouseover="document.getElementById('status').textContent='hovered'"
+            ondblclick="document.getElementById('status').textContent='double-clicked'">Submit</button>
+    </form>
+    <script>
+        const form = document.getElementById('demo-form');
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const notes = document.getElementById('notes').value;
+            const color = document.getElementById('color').value;
+            const terms = document.getElementById('terms').checked;
+            document.getElementById('status').textContent = `submitted:${name}:${notes}:${color}:${terms}`;
+        });
+    </script>
+</body>
+
+</html>
