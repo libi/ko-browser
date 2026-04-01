@@ -20,7 +20,7 @@
 
 ---
 
-**kbr** is a browser automation tool built in Go, designed for AI agents. It provides both a **CLI tool** and a **Go library** with a custom accessibility tree snapshot format that saves **46%+ tokens** compared to alternatives.
+**ko-browser** is a browser automation tool built in Go, designed for AI agents. It provides both a **CLI tool** and a **Go library** with a custom accessibility tree snapshot format that saves **46%+ tokens** compared to alternatives.
 
 ### ✨ Key Features
 
