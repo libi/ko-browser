@@ -34,7 +34,7 @@ jobs:
           GOARCH: amd64
         run: |
           mkdir -p dist/linux-amd64
-          go build -trimpath -tags=ocr \
+          go build -buildvcs=false -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
@@ -70,7 +70,7 @@ jobs:
               apt-get install -y pkg-config libtesseract-dev libleptonica-dev tesseract-ocr &&
               mkdir -p dist/linux-arm64 &&
               export CGO_ENABLED=1 GOOS=linux GOARCH=arm64 &&
-              go build -trimpath -tags=ocr \
+              go build -buildvcs=false -trimpath -tags=ocr \
                 -ldflags "-s -w \
                   -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
                   -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
@@ -116,7 +116,7 @@ jobs:
           GOARCH: amd64
         run: |
           mkdir -p dist/darwin-amd64
-          go build -trimpath -tags=ocr \
+          go build -buildvcs=false -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
@@ -164,7 +164,7 @@ jobs:
           GOARCH: arm64
         run: |
           mkdir -p dist/darwin-arm64
-          go build -trimpath -tags=ocr \
+          go build -buildvcs=false -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
@@ -210,7 +210,7 @@ jobs:
           export GOOS=windows
           export GOARCH=amd64
           export CC=gcc
-          go build -trimpath -tags=ocr \
+          go build -buildvcs=false -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
