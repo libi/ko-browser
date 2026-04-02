@@ -25,39 +25,48 @@
 
 ## 📦 安装
 
+### Homebrew
+
+```bash
+brew tap libi/tap
+brew install ko-browser
+```
+
+> Homebrew 安装的是带 OCR 的 `kbr`。
+> 它会自动安装 `tesseract`，并通过源码编译。
+
 ### 预编译二进制
 
 从 [GitHub Releases](https://github.com/libi/ko-browser/releases) 下载：
+
+> GitHub Release 提供的二进制同样是带 OCR 的版本。
+> 使用前请先安装 Tesseract 运行时库：macOS 用 `brew install tesseract`，Linux 用 `apt install libtesseract-dev`。
 
 ```bash
 # macOS (Apple Silicon)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-arm64.tar.gz
 tar xzf ko-browser-darwin-arm64.tar.gz
-mv ko-browser-darwin-arm64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 
 # macOS (Intel)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-amd64.tar.gz
 tar xzf ko-browser-darwin-amd64.tar.gz
-mv ko-browser-darwin-amd64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 
 # Linux (amd64)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-linux-amd64.tar.gz
 tar xzf ko-browser-linux-amd64.tar.gz
-mv ko-browser-linux-amd64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 ```
 
 ### 源码编译
 
 ```bash
-# 安装 kbr 二进制（无 CGO 依赖，无需 Tesseract）
-go install github.com/libi/ko-browser/cmd/kbr@latest
-
-# 带 OCR 支持（需要先安装 Tesseract）
+# 安装带 OCR 支持的 kbr（需要先安装 Tesseract）
 CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
 
-> **OCR 是可选功能。** 默认编译零 CGO 依赖，开箱即用。
-> 仅在需要 `kbr snapshot --ocr` 处理图片密集页面时才需要 `-tags=ocr`。
+> 发布出去的安装方式统一使用 OCR 版本。
 > OCR 依赖 Tesseract：`brew install tesseract`（macOS）/ `apt install libtesseract-dev`（Linux）。
 
 ### 安装浏览器

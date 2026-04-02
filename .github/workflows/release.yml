@@ -1,19 +1,18 @@
-name: Release
+name: GitHub Release
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
-  BINARY_NAME: ko-browser
+  BINARY_NAME: kbr
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Linux amd64 — native build on Ubuntu runner
-  # ---------------------------------------------------------------------------
   build-linux-amd64:
     runs-on: ubuntu-latest
     steps:
@@ -23,35 +22,34 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install Tesseract OCR dev libraries
+      - name: Install OCR build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libtesseract-dev libleptonica-dev tesseract-ocr
+          sudo apt-get install -y pkg-config libtesseract-dev libleptonica-dev tesseract-ocr
 
-      - name: Build
+      - name: Build OCR binary
         env:
           CGO_ENABLED: "1"
           GOOS: linux
           GOARCH: amd64
         run: |
-          go build -trimpath \
+          mkdir -p dist/linux-amd64
+          go build -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
               -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o ${BINARY_NAME}-linux-amd64 .
+            -o dist/linux-amd64/${BINARY_NAME} ./cmd/kbr
 
       - name: Package
-        run: tar czf ${BINARY_NAME}-linux-amd64.tar.gz ${BINARY_NAME}-linux-amd64
+        run: |
+          tar czf ko-browser-linux-amd64.tar.gz -C dist/linux-amd64 ${BINARY_NAME}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}-linux-amd64
-          path: ${{ env.BINARY_NAME }}-linux-amd64.tar.gz
+          name: ko-browser-linux-amd64
+          path: ko-browser-linux-amd64.tar.gz
 
-  # ---------------------------------------------------------------------------
-  # Linux arm64 — build inside Docker with QEMU emulation
-  # ---------------------------------------------------------------------------
   build-linux-arm64:
     runs-on: ubuntu-latest
     steps:
@@ -61,35 +59,31 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Build in ARM64 container
+      - name: Build OCR binary in ARM64 container
         run: |
           docker run --rm --platform linux/arm64 \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
-            -e CGO_ENABLED=1 \
             golang:1.26-bookworm \
-            bash -c "
-              apt-get update && \
-              apt-get install -y libtesseract-dev libleptonica-dev && \
-              go build -trimpath \
-                -ldflags \"-s -w \
+            bash -lc '
+              apt-get update &&
+              apt-get install -y pkg-config libtesseract-dev libleptonica-dev tesseract-ocr &&
+              mkdir -p dist/linux-arm64 &&
+              export CGO_ENABLED=1 GOOS=linux GOARCH=arm64 &&
+              go build -trimpath -tags=ocr \
+                -ldflags "-s -w \
                   -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
                   -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
-                  -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \
-                -o ko-browser-linux-arm64 .
-            "
-
-      - name: Package
-        run: tar czf ${BINARY_NAME}-linux-arm64.tar.gz ${BINARY_NAME}-linux-arm64
+                  -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                -o dist/linux-arm64/kbr ./cmd/kbr &&
+              tar czf ko-browser-linux-arm64.tar.gz -C dist/linux-arm64 kbr
+            '
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}-linux-arm64
-          path: ${{ env.BINARY_NAME }}-linux-arm64.tar.gz
+          name: ko-browser-linux-arm64
+          path: ko-browser-linux-arm64.tar.gz
 
-  # ---------------------------------------------------------------------------
-  # macOS amd64 — Intel runner
-  # ---------------------------------------------------------------------------
   build-darwin-amd64:
     runs-on: macos-13
     steps:
@@ -99,33 +93,33 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install Tesseract OCR
-        run: brew install tesseract
+      - name: Install OCR build dependencies
+        run: |
+          brew install tesseract pkg-config
 
-      - name: Build
+      - name: Build OCR binary
         env:
           CGO_ENABLED: "1"
           GOOS: darwin
           GOARCH: amd64
         run: |
-          go build -trimpath \
+          mkdir -p dist/darwin-amd64
+          go build -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
               -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o ${BINARY_NAME}-darwin-amd64 .
+            -o dist/darwin-amd64/${BINARY_NAME} ./cmd/kbr
 
       - name: Package
-        run: tar czf ${BINARY_NAME}-darwin-amd64.tar.gz ${BINARY_NAME}-darwin-amd64
+        run: |
+          tar czf ko-browser-darwin-amd64.tar.gz -C dist/darwin-amd64 ${BINARY_NAME}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}-darwin-amd64
-          path: ${{ env.BINARY_NAME }}-darwin-amd64.tar.gz
+          name: ko-browser-darwin-amd64
+          path: ko-browser-darwin-amd64.tar.gz
 
-  # ---------------------------------------------------------------------------
-  # macOS arm64 — Apple Silicon runner
-  # ---------------------------------------------------------------------------
   build-darwin-arm64:
     runs-on: macos-14
     steps:
@@ -135,33 +129,33 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install Tesseract OCR
-        run: brew install tesseract
+      - name: Install OCR build dependencies
+        run: |
+          brew install tesseract pkg-config
 
-      - name: Build
+      - name: Build OCR binary
         env:
           CGO_ENABLED: "1"
           GOOS: darwin
           GOARCH: arm64
         run: |
-          go build -trimpath \
+          mkdir -p dist/darwin-arm64
+          go build -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
               -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o ${BINARY_NAME}-darwin-arm64 .
+            -o dist/darwin-arm64/${BINARY_NAME} ./cmd/kbr
 
       - name: Package
-        run: tar czf ${BINARY_NAME}-darwin-arm64.tar.gz ${BINARY_NAME}-darwin-arm64
+        run: |
+          tar czf ko-browser-darwin-arm64.tar.gz -C dist/darwin-arm64 ${BINARY_NAME}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}-darwin-arm64
-          path: ${{ env.BINARY_NAME }}-darwin-arm64.tar.gz
+          name: ko-browser-darwin-arm64
+          path: ko-browser-darwin-arm64.tar.gz
 
-  # ---------------------------------------------------------------------------
-  # Windows amd64 — MSYS2 + MinGW for CGO/Tesseract
-  # ---------------------------------------------------------------------------
   build-windows-amd64:
     runs-on: windows-latest
     defaults:
@@ -171,7 +165,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
-        id: setup-go
         with:
           go-version-file: go.mod
 
@@ -186,29 +179,30 @@ jobs:
             mingw-w64-x86_64-tesseract-ocr
             mingw-w64-x86_64-leptonica
 
-      - name: Build
+      - name: Build OCR binary
         run: |
+          mkdir -p dist/windows-amd64
           export CGO_ENABLED=1
+          export GOOS=windows
+          export GOARCH=amd64
           export CC=gcc
-          go build -trimpath \
+          go build -trimpath -tags=ocr \
             -ldflags "-s -w \
               -X github.com/libi/ko-browser/cmd.version=${{ github.ref_name }} \
               -X github.com/libi/ko-browser/cmd.commit=${{ github.sha }} \
               -X github.com/libi/ko-browser/cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o ${BINARY_NAME}-windows-amd64.exe .
+            -o dist/windows-amd64/${BINARY_NAME}.exe ./cmd/kbr
 
       - name: Package
         shell: pwsh
-        run: Compress-Archive -Path "${{ env.BINARY_NAME }}-windows-amd64.exe" -DestinationPath "${{ env.BINARY_NAME }}-windows-amd64.zip"
+        run: |
+          Compress-Archive -Path "dist/windows-amd64/${{ env.BINARY_NAME }}.exe" -DestinationPath "ko-browser-windows-amd64.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BINARY_NAME }}-windows-amd64
-          path: ${{ env.BINARY_NAME }}-windows-amd64.zip
+          name: ko-browser-windows-amd64
+          path: ko-browser-windows-amd64.zip
 
-  # ---------------------------------------------------------------------------
-  # Create GitHub Release with all artifacts
-  # ---------------------------------------------------------------------------
   release:
     needs:
       - build-linux-amd64
@@ -218,20 +212,21 @@ jobs:
       - build-windows-amd64
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: List artifacts
-        run: ls -lR artifacts/
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.tar.gz *.zip > checksums.txt
 
-      - name: Create Release
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             artifacts/*.tar.gz
             artifacts/*.zip
+            artifacts/checksums.txt

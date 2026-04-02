@@ -50,39 +50,48 @@
 
 ## 📦 Installation
 
+### Homebrew
+
+```bash
+brew tap libi/tap
+brew install ko-browser
+```
+
+> Homebrew installs `kbr` with OCR enabled.
+> It pulls in `tesseract` automatically and builds from source.
+
 ### Pre-built binaries
 
 Download from [GitHub Releases](https://github.com/libi/ko-browser/releases):
+
+> Release binaries are also built with OCR enabled.
+> Install Tesseract first so the runtime OCR libraries are available: `brew install tesseract` on macOS, `apt install libtesseract-dev` on Linux.
 
 ```bash
 # macOS (Apple Silicon)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-arm64.tar.gz
 tar xzf ko-browser-darwin-arm64.tar.gz
-mv ko-browser-darwin-arm64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 
 # macOS (Intel)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-amd64.tar.gz
 tar xzf ko-browser-darwin-amd64.tar.gz
-mv ko-browser-darwin-amd64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 
 # Linux (amd64)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-linux-amd64.tar.gz
 tar xzf ko-browser-linux-amd64.tar.gz
-mv ko-browser-linux-amd64 /usr/local/bin/kbr
+mv kbr /usr/local/bin/kbr
 ```
 
 ### From source
 
 ```bash
-# Install kbr binary directly (no CGO, no Tesseract needed)
-go install github.com/libi/ko-browser/cmd/kbr@latest
-
-# With OCR support (requires Tesseract to be installed)
+# Install kbr with OCR support (requires Tesseract to be installed)
 CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
 
-> **OCR is optional.** The default build has zero CGO dependencies and works everywhere.
-> Only add `-tags=ocr` if you need `kbr snapshot --ocr` for image-heavy pages.
+> OCR is required for the published packages.
 > This requires Tesseract: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
 
 ### Install Chrome (if not already installed)

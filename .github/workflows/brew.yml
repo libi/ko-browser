@@ -1,0 +1,36 @@
+name: Homebrew Tap
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  brew:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Homebrew tap formula
+        env:
+          TAG: ${{ github.ref_name }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          curl -fsSL -o /tmp/ko-browser-src.tar.gz "https://github.com/libi/ko-browser/archive/refs/tags/${TAG}.tar.gz"
+          SHA256=$(shasum -a 256 /tmp/ko-browser-src.tar.gz | awk '{print $1}')
+
+          git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/libi/homebrew-tap.git" /tmp/homebrew-tap
+          mkdir -p /tmp/homebrew-tap/Formula
+
+          ./scripts/render-homebrew-formula.sh "${TAG}" "${SHA256}" > /tmp/homebrew-tap/Formula/ko-browser.rb
+
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/ko-browser.rb
+          git commit -m "brew: update ko-browser to ${TAG}" || exit 0
+          git push

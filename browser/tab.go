@@ -19,8 +19,9 @@ type TabInfo struct {
 
 // tabEntry tracks a chromedp context for a tab.
 type tabEntry struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx      context.Context
+	cancel   context.CancelFunc
+	targetID target.ID
 }
 
 // initTabs initializes tab tracking if needed,
@@ -29,37 +30,60 @@ func (b *Browser) initTabs() {
 	if b.tabs != nil {
 		return
 	}
-	b.tabs = []tabEntry{{ctx: b.ctx, cancel: nil}} // first tab — never cancelled by us
+	var tid target.ID
+	_ = chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		c := chromedp.FromContext(ctx)
+		if c != nil && c.Target != nil {
+			tid = c.Target.TargetID
+		}
+		return nil
+	}))
+	b.tabs = []tabEntry{{ctx: b.ctx, cancel: nil, targetID: tid}}
 	b.activeTab = 0
 }
 
+// getPageTargets returns all "page" type targets from the browser via CDP.
+// Uses b.ctx (the first tab) to query so that all tabs in the same browser
+// context are visible.
+func (b *Browser) getPageTargets() ([]*target.Info, error) {
+	var allTargets []*target.Info
+	if err := chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		var err error
+		allTargets, err = target.GetTargets().Do(ctx)
+		return err
+	})); err != nil {
+		return nil, err
+	}
+	var pages []*target.Info
+	for _, t := range allTargets {
+		if t.Type == "page" {
+			pages = append(pages, t)
+		}
+	}
+	return pages, nil
+}
+
 // TabList returns information about all open tabs.
+// It queries the browser via CDP to discover ALL actual tabs,
+// not just the ones tracked in b.tabs.
 func (b *Browser) TabList() ([]TabInfo, error) {
 	b.initTabs()
 
+	pages, err := b.getPageTargets()
+	if err != nil {
+		return nil, fmt.Errorf("list tabs: %w", err)
+	}
+
+	activeTID := b.tabs[b.activeTab].targetID
+
 	var tabs []TabInfo
-	for i, entry := range b.tabs {
-		info := TabInfo{
+	for i, p := range pages {
+		tabs = append(tabs, TabInfo{
 			Index:  i,
-			Active: i == b.activeTab,
-		}
-
-		// Try to get URL and title from the tab's context
-		_ = chromedp.Run(entry.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-			c := chromedp.FromContext(ctx)
-			if c != nil && c.Target != nil {
-				tid := c.Target.TargetID
-				// Use GetTargetInfo to get URL/title for this target
-				targetInfo, err := target.GetTargetInfo().WithTargetID(tid).Do(ctx)
-				if err == nil {
-					info.URL = targetInfo.URL
-					info.Title = targetInfo.Title
-				}
-			}
-			return nil
-		}))
-
-		tabs = append(tabs, info)
+			URL:    p.URL,
+			Title:  p.Title,
+			Active: p.TargetID == activeTID,
+		})
 	}
 	return tabs, nil
 }
@@ -73,8 +97,10 @@ func (b *Browser) TabNew(url string) error {
 		url = "about:blank"
 	}
 
-	// Create a new chromedp context (= new tab) from the allocator context
-	newCtx, newCancel := chromedp.NewContext(b.allocCtx)
+	// Create a new tab within the same browser context by using b.ctx as parent.
+	// Using b.ctx (instead of b.allocCtx) ensures the new tab is in the same
+	// browser context, so target.GetTargets() can discover all tabs.
+	newCtx, newCancel := chromedp.NewContext(b.ctx)
 
 	// Navigate the new tab to the URL
 	if err := chromedp.Run(newCtx, chromedp.Navigate(url)); err != nil {
@@ -85,7 +111,17 @@ func (b *Browser) TabNew(url string) error {
 	// Small wait for the target to stabilize
 	time.Sleep(100 * time.Millisecond)
 
-	b.tabs = append(b.tabs, tabEntry{ctx: newCtx, cancel: newCancel})
+	// Get the target ID of the new tab
+	var tid target.ID
+	_ = chromedp.Run(newCtx, chromedp.ActionFunc(func(ctx context.Context) error {
+		c := chromedp.FromContext(ctx)
+		if c != nil && c.Target != nil {
+			tid = c.Target.TargetID
+		}
+		return nil
+	}))
+
+	b.tabs = append(b.tabs, tabEntry{ctx: newCtx, cancel: newCancel, targetID: tid})
 	b.activeTab = len(b.tabs) - 1
 
 	// Clear snapshot cache since we're on a new page
@@ -94,61 +130,111 @@ func (b *Browser) TabNew(url string) error {
 	return nil
 }
 
-// TabClose closes the tab at the given index.
+// TabClose closes the tab at the given index (from TabList).
 // If index is -1, closes the current tab.
 func (b *Browser) TabClose(index int) error {
 	b.initTabs()
 
+	// Get all actual page targets from the browser
+	pages, err := b.getPageTargets()
+	if err != nil {
+		return err
+	}
+
 	if index == -1 {
-		index = b.activeTab
+		// Find the index of the active tab in the page targets
+		activeTID := b.tabs[b.activeTab].targetID
+		for i, p := range pages {
+			if p.TargetID == activeTID {
+				index = i
+				break
+			}
+		}
+		if index == -1 {
+			return fmt.Errorf("could not determine current tab")
+		}
 	}
-	if index < 0 || index >= len(b.tabs) {
-		return fmt.Errorf("tab index %d out of range (0-%d)", index, len(b.tabs)-1)
+
+	if index < 0 || index >= len(pages) {
+		return fmt.Errorf("tab index %d out of range (0-%d)", index, len(pages)-1)
 	}
-	if len(b.tabs) <= 1 {
+	if len(pages) <= 1 {
 		return fmt.Errorf("cannot close the last tab")
 	}
 
-	// Cancel the chromedp context for this tab
-	entry := b.tabs[index]
-	if entry.cancel != nil {
-		entry.cancel()
-	} else {
-		// First tab — use chromedp.Cancel
-		_ = chromedp.Cancel(entry.ctx)
+	closeTID := pages[index].TargetID
+
+	// Try to find and close in tracked tabs
+	for i, entry := range b.tabs {
+		if entry.targetID == closeTID {
+			if entry.cancel != nil {
+				entry.cancel()
+			} else {
+				_ = chromedp.Cancel(entry.ctx)
+			}
+			b.tabs = append(b.tabs[:i], b.tabs[i+1:]...)
+
+			if b.activeTab >= len(b.tabs) {
+				b.activeTab = len(b.tabs) - 1
+			}
+			if b.activeTab < 0 {
+				b.activeTab = 0
+			}
+			b.lastSnap = nil
+			return nil
+		}
 	}
 
-	// Remove from our tab list
-	b.tabs = append(b.tabs[:index], b.tabs[index+1:]...)
-
-	// Adjust active tab index
-	if b.activeTab >= len(b.tabs) {
-		b.activeTab = len(b.tabs) - 1
-	}
-	if b.activeTab < 0 {
-		b.activeTab = 0
-	}
-
+	// Tab not tracked — close via CDP command
+	err = chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		return target.CloseTarget(closeTID).Do(ctx)
+	}))
 	b.lastSnap = nil
-	return nil
+	return err
 }
 
-// TabSwitch switches to the tab at the given index.
+// TabSwitch switches to the tab at the given index (from TabList).
 func (b *Browser) TabSwitch(index int) error {
 	b.initTabs()
 
-	if index < 0 || index >= len(b.tabs) {
-		return fmt.Errorf("tab index %d out of range (0-%d)", index, len(b.tabs)-1)
+	// Get all actual page targets from the browser
+	pages, err := b.getPageTargets()
+	if err != nil {
+		return err
 	}
 
-	b.activeTab = index
+	if index < 0 || index >= len(pages) {
+		return fmt.Errorf("tab index %d out of range (0-%d)", index, len(pages)-1)
+	}
+
+	switchTID := pages[index].TargetID
+
+	// Check if we already track this target
+	for i, entry := range b.tabs {
+		if entry.targetID == switchTID {
+			b.activeTab = i
+			b.lastSnap = nil
+			return chromedp.Run(entry.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+				return target.ActivateTarget(switchTID).Do(ctx)
+			}))
+		}
+	}
+
+	// Target not tracked — create a new context attached to this target
+	newCtx, newCancel := chromedp.NewContext(b.ctx, chromedp.WithTargetID(switchTID))
+	if err := chromedp.Run(newCtx, chromedp.ActionFunc(func(ctx context.Context) error {
+		return nil
+	})); err != nil {
+		newCancel()
+		return fmt.Errorf("attach to tab: %w", err)
+	}
+
+	b.tabs = append(b.tabs, tabEntry{ctx: newCtx, cancel: newCancel, targetID: switchTID})
+	b.activeTab = len(b.tabs) - 1
 	b.lastSnap = nil
 
-	// Activate the target in the browser
-	tabCtx := b.tabs[index].ctx
-	return chromedp.Run(tabCtx, chromedp.ActionFunc(func(ctx context.Context) error {
-		tid := chromedp.FromContext(ctx).Target.TargetID
-		return target.ActivateTarget(tid).Do(ctx)
+	return chromedp.Run(newCtx, chromedp.ActionFunc(func(ctx context.Context) error {
+		return target.ActivateTarget(switchTID).Do(ctx)
 	}))
 }
 
