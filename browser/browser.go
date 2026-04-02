@@ -123,11 +123,11 @@ func (b *Browser) Context() context.Context {
 }
 
 func (b *Browser) Close() {
-	if b.cancel != nil {
-		b.cancel()
-	}
 	if b.allocCanc != nil {
 		b.allocCanc()
+	}
+	if b.cancel != nil {
+		b.cancel()
 	}
 }
 
