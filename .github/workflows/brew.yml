@@ -15,6 +15,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate tap token
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          if [ -z "${HOMEBREW_TAP_GITHUB_TOKEN}" ]; then
+            echo "HOMEBREW_TAP_GITHUB_TOKEN is not configured for this repository." >&2
+            echo "Add a token with write access to libi/homebrew-tap in Settings > Secrets and variables > Actions." >&2
+            exit 1
+          fi
+
       - name: Update Homebrew tap formula
         env:
           TAG: ${{ github.ref_name }}

@@ -65,7 +65,7 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             golang:1.26-bookworm \
-            bash -lc '
+            bash -c '
               apt-get update &&
               apt-get install -y pkg-config libtesseract-dev libleptonica-dev tesseract-ocr &&
               mkdir -p dist/linux-arm64 &&
@@ -85,7 +85,7 @@ jobs:
           path: ko-browser-linux-arm64.tar.gz
 
   build-darwin-amd64:
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
 
@@ -95,7 +95,19 @@ jobs:
 
       - name: Install OCR build dependencies
         run: |
-          brew install tesseract pkg-config
+          brew install tesseract leptonica pkg-config
+
+      - name: Configure OCR build environment
+        run: |
+          TESSERACT_PREFIX="$(brew --prefix tesseract)"
+          LEPTONICA_PREFIX="$(brew --prefix leptonica)"
+          {
+            echo "PKG_CONFIG_PATH=${TESSERACT_PREFIX}/lib/pkgconfig:${LEPTONICA_PREFIX}/lib/pkgconfig"
+            echo "CGO_CFLAGS=-I${TESSERACT_PREFIX}/include -I${LEPTONICA_PREFIX}/include"
+            echo "CGO_LDFLAGS=-L${TESSERACT_PREFIX}/lib -L${LEPTONICA_PREFIX}/lib"
+            echo "CPATH=${TESSERACT_PREFIX}/include:${LEPTONICA_PREFIX}/include"
+            echo "LIBRARY_PATH=${TESSERACT_PREFIX}/lib:${LEPTONICA_PREFIX}/lib"
+          } >> "${GITHUB_ENV}"
 
       - name: Build OCR binary
         env:
@@ -131,7 +143,19 @@ jobs:
 
       - name: Install OCR build dependencies
         run: |
-          brew install tesseract pkg-config
+          brew install tesseract leptonica pkg-config
+
+      - name: Configure OCR build environment
+        run: |
+          TESSERACT_PREFIX="$(brew --prefix tesseract)"
+          LEPTONICA_PREFIX="$(brew --prefix leptonica)"
+          {
+            echo "PKG_CONFIG_PATH=${TESSERACT_PREFIX}/lib/pkgconfig:${LEPTONICA_PREFIX}/lib/pkgconfig"
+            echo "CGO_CFLAGS=-I${TESSERACT_PREFIX}/include -I${LEPTONICA_PREFIX}/include"
+            echo "CGO_LDFLAGS=-L${TESSERACT_PREFIX}/lib -L${LEPTONICA_PREFIX}/lib"
+            echo "CPATH=${TESSERACT_PREFIX}/include:${LEPTONICA_PREFIX}/include"
+            echo "LIBRARY_PATH=${TESSERACT_PREFIX}/lib:${LEPTONICA_PREFIX}/lib"
+          } >> "${GITHUB_ENV}"
 
       - name: Build OCR binary
         env:
