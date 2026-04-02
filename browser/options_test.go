@@ -1,6 +1,9 @@
 package browser
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
 func TestShouldDisableSandbox(t *testing.T) {
 	t.Setenv("KO_BROWSER_NO_SANDBOX", "")
@@ -11,7 +14,7 @@ func TestShouldDisableSandbox(t *testing.T) {
 		t.Fatal("expected sandbox to stay enabled by default")
 	}
 
-	if testing.GOOS == "linux" {
+	if runtime.GOOS == "linux" {
 		t.Setenv("CI", "true")
 		if !shouldDisableSandbox() {
 			t.Fatal("expected sandbox to be disabled on linux CI")
