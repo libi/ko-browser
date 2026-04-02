@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -25,11 +26,29 @@ func testdataURL(name string) string {
 // newBrowser creates a headless browser and registers cleanup.
 func newBrowser(t *testing.T) *browser.Browser {
 	t.Helper()
-	b, err := browser.New(browser.Options{
-		Headless: true,
-		Timeout:  30 * time.Second,
-	})
-	if err != nil {
+	if runtime.GOOS == "linux" {
+		_ = os.Setenv("KO_BROWSER_NO_SANDBOX", "1")
+	}
+	var (
+		b   *browser.Browser
+		err error
+	)
+	attempts := 1
+	if runtime.GOOS == "linux" {
+		attempts = 3
+	}
+	for i := 0; i < attempts; i++ {
+		b, err = browser.New(browser.Options{
+			Headless: true,
+			Timeout:  30 * time.Second,
+		})
+		if err == nil {
+			break
+		}
+		if i < attempts-1 && strings.Contains(err.Error(), "chrome failed to start") {
+			time.Sleep(750 * time.Millisecond)
+			continue
+		}
 		t.Fatalf("browser.New: %v", err)
 	}
 	t.Cleanup(func() { b.Close() })

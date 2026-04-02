@@ -3,6 +3,7 @@ package browser
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/chromedp/cdproto/target"
@@ -63,13 +64,59 @@ func (b *Browser) getPageTargets() ([]*target.Info, error) {
 	return pages, nil
 }
 
+// orderedPageTargets returns page targets in the same stable order that TabList
+// exposes to callers: tracked tabs first, then any untracked tabs.
+func (b *Browser) orderedPageTargets() ([]*target.Info, error) {
+	pages, err := b.getPageTargets()
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[target.ID]*target.Info, len(pages))
+	for _, p := range pages {
+		byID[p.TargetID] = p
+	}
+
+	ordered := make([]*target.Info, 0, len(pages))
+	for _, entry := range b.tabs {
+		if p, ok := byID[entry.targetID]; ok {
+			ordered = append(ordered, p)
+			delete(byID, entry.targetID)
+		}
+	}
+
+	var remainder []*target.Info
+	for _, p := range pages {
+		if _, ok := byID[p.TargetID]; ok {
+			remainder = append(remainder, p)
+		}
+	}
+	slices.SortFunc(remainder, func(a, b *target.Info) int {
+		if a.URL != b.URL {
+			if a.URL < b.URL {
+				return -1
+			}
+			return 1
+		}
+		if a.TargetID < b.TargetID {
+			return -1
+		}
+		if a.TargetID > b.TargetID {
+			return 1
+		}
+		return 0
+	})
+
+	return append(ordered, remainder...), nil
+}
+
 // TabList returns information about all open tabs.
 // It queries the browser via CDP to discover ALL actual tabs,
 // not just the ones tracked in b.tabs.
 func (b *Browser) TabList() ([]TabInfo, error) {
 	b.initTabs()
 
-	pages, err := b.getPageTargets()
+	pages, err := b.orderedPageTargets()
 	if err != nil {
 		return nil, fmt.Errorf("list tabs: %w", err)
 	}
@@ -135,8 +182,7 @@ func (b *Browser) TabNew(url string) error {
 func (b *Browser) TabClose(index int) error {
 	b.initTabs()
 
-	// Get all actual page targets from the browser
-	pages, err := b.getPageTargets()
+	pages, err := b.orderedPageTargets()
 	if err != nil {
 		return err
 	}
@@ -164,41 +210,43 @@ func (b *Browser) TabClose(index int) error {
 
 	closeTID := pages[index].TargetID
 
-	// Try to find and close in tracked tabs
+	closeErr := chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		return target.CloseTarget(closeTID).Do(ctx)
+	}))
+	if closeErr != nil {
+		return closeErr
+	}
+
+	// Remove any tracked context for the closed tab after the target is closed.
 	for i, entry := range b.tabs {
 		if entry.targetID == closeTID {
 			if entry.cancel != nil {
 				entry.cancel()
-			} else {
-				_ = chromedp.Cancel(entry.ctx)
 			}
 			b.tabs = append(b.tabs[:i], b.tabs[i+1:]...)
-
-			if b.activeTab >= len(b.tabs) {
-				b.activeTab = len(b.tabs) - 1
-			}
-			if b.activeTab < 0 {
+			switch {
+			case len(b.tabs) == 0:
 				b.activeTab = 0
+			case i < b.activeTab:
+				b.activeTab--
+			case i == b.activeTab:
+				if b.activeTab >= len(b.tabs) {
+					b.activeTab = len(b.tabs) - 1
+				}
 			}
-			b.lastSnap = nil
-			return nil
+			break
 		}
 	}
 
-	// Tab not tracked — close via CDP command
-	err = chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		return target.CloseTarget(closeTID).Do(ctx)
-	}))
 	b.lastSnap = nil
-	return err
+	return nil
 }
 
 // TabSwitch switches to the tab at the given index (from TabList).
 func (b *Browser) TabSwitch(index int) error {
 	b.initTabs()
 
-	// Get all actual page targets from the browser
-	pages, err := b.getPageTargets()
+	pages, err := b.orderedPageTargets()
 	if err != nil {
 		return err
 	}

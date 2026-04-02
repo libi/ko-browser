@@ -50,6 +50,7 @@ func New(opts Options) (*Browser, error) {
 		allocOpts = append(allocOpts,
 			chromedp.Flag("no-sandbox", true),
 			chromedp.Flag("disable-setuid-sandbox", true),
+			chromedp.Flag("disable-dev-shm-usage", true),
 		)
 	}
 	if opts.Profile != "" {
