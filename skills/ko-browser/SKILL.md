@@ -6,21 +6,18 @@ allowed-tools: Bash(kbr:*)
 
 # Browser Automation with ko-browser
 
-The CLI uses Chrome/Chromium via CDP directly. Install via `go install github.com/libi/ko-browser@latest` or build from source. Run `kbr install` to verify Chrome is available, or `kbr install --with-deps` to auto-install it. Existing Chrome, Brave, and Chromium installations are detected automatically.
+The CLI uses Chrome/Chromium via CDP directly. Install via `go install github.com/libi/ko-browser/cmd/kbr@latest` or build from source. Run `kbr install` to verify Chrome is available, or `kbr install --with-deps` to auto-install it. Existing Chrome, Brave, and Chromium installations are detected automatically.
 
 ## Installation
 
 ```bash
-# Install ko-browser via Go (binary installs as "ko-browser")
-go install github.com/libi/ko-browser@latest
+# Install kbr binary directly (no CGO, no external dependencies)
+go install github.com/libi/ko-browser/cmd/kbr@latest
 
-# Create a short alias (recommended)
-alias kbr=ko-browser
-
-# Or build from source with custom binary name
+# Or build from source
 git clone https://github.com/libi/ko-browser.git
 cd ko-browser
-go build -o kbr .
+go build -o kbr ./cmd/kbr/
 mv kbr /usr/local/bin/
 
 # Verify browser dependency
@@ -30,7 +27,12 @@ kbr install
 kbr install --with-deps
 ```
 
-> **Note:** `go install` produces a binary named `ko-browser`. Use `alias kbr=ko-browser` or build from source with `-o kbr` to get the short name. Both `ko-browser` and `kbr` (alias) work identically — all examples below use `kbr` for brevity.
+> **OCR is optional.** The default install has zero CGO dependencies.
+> To enable `kbr snapshot --ocr`, rebuild with `-tags=ocr` (requires Tesseract):
+> ```bash
+> # Install Tesseract first: brew install tesseract (macOS) / apt install libtesseract-dev (Linux)
+> CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
+> ```
 
 **Manual browser installation by OS:**
 

@@ -29,7 +29,7 @@
 - 📦 **Dual-use** — works as a CLI tool AND a Go library (`go get`)
 - ⚡ **Fast startup** — ~50ms (Go binary) vs ~500ms (Node.js-based tools)
 - 🔢 **Simple element references** — `click 5` 
-- 🔍 **Built-in OCR** — optional Tesseract integration for image-heavy pages
+- 🔍 **Optional OCR** — Tesseract integration via `-tags=ocr` build flag for image-heavy pages
 - 🌐 **~86 commands** — full parity with agent-browser v0.19.0
 
 ### Snapshot Format Comparison
@@ -74,9 +74,16 @@ mv ko-browser-linux-amd64 /usr/local/bin/kbr
 ### From source
 
 ```bash
-go install github.com/libi/ko-browser@latest
-mv $(go env GOPATH)/bin/ko-browser $(go env GOPATH)/bin/kbr  # optional rename
+# Install kbr binary directly (no CGO, no Tesseract needed)
+go install github.com/libi/ko-browser/cmd/kbr@latest
+
+# With OCR support (requires Tesseract to be installed)
+CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
+
+> **OCR is optional.** The default build has zero CGO dependencies and works everywhere.
+> Only add `-tags=ocr` if you need `kbr snapshot --ocr` for image-heavy pages.
+> This requires Tesseract: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
 
 ### Install Chrome (if not already installed)
 
@@ -704,15 +711,16 @@ kbr loads configuration in this priority (low → high):
 
 ```
 kbr
-├── browser/     ★ Public Go library — core browser API
-├── axtree/      ★ Public — AX Tree extraction, filtering, formatting
-├── selector/    ★ Public — element selector parsing (ID/CSS/XPath)
-├── ocr/         ★ Public — optional Tesseract OCR engine
-├── cmd/           CLI — cobra command definitions
-└── internal/      CLI-only — daemon, session management
+├── cmd/kbr/      ★ CLI entry point — `go install .../cmd/kbr@latest`
+├── browser/      ★ Public Go library — core browser API
+├── axtree/       ★ Public — AX Tree extraction, filtering, formatting
+├── selector/     ★ Public — element selector parsing (ID/CSS/XPath)
+├── ocr/          ★ Public — Tesseract OCR engine (build tag: ocr)
+├── cmd/            CLI — cobra command definitions
+└── internal/       CLI-only — daemon, session management
 ```
 
-The `browser/`, `axtree/`, `selector/`, and `ocr/` packages are all public and importable via `go get`. The `internal/` package is only used by the CLI daemon.
+The `browser/`, `axtree/`, `selector/`, and `ocr/` packages are all public and importable via `go get`. The `internal/` package is only used by the CLI daemon. OCR requires `-tags=ocr` at build time.
 
 ---
 
@@ -723,7 +731,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ```bash
 git clone https://github.com/libi/ko-browser.git
 cd ko-browser
-go build -o kbr .
+go build -o kbr ./cmd/kbr/              # without OCR
+go build -tags=ocr -o kbr ./cmd/kbr/     # with OCR
 go test ./tests/ -v -timeout 180s
 ```
 

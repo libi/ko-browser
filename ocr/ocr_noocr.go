@@ -1,3 +1,5 @@
+//go:build !ocr
+
 package ocr
 
 import internalocr "github.com/libi/ko-browser/internal/ocr"

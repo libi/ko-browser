@@ -113,16 +113,21 @@ func formatNodeWithOptions(buf *strings.Builder, node *Node, depth int, counter 
 
 	isInteractive := interactiveRoles[roleLower]
 
-	// InteractiveOnly: skip non-interactive nodes but still recurse their children
+	// InteractiveOnly: skip non-interactive nodes but still recurse their children.
+	// We still increment the counter to keep IDs consistent with BuildIDMap,
+	// and use depth+1 to preserve the tree hierarchy.
 	if opts.InteractiveOnly && !isInteractive {
+		*counter++
 		for _, child := range node.Children {
-			formatNodeWithOptions(buf, child, depth, counter, opts)
+			formatNodeWithOptions(buf, child, depth+1, counter, opts)
 		}
 		return
 	}
 
-	// Compact: skip structural wrappers without names that have children
+	// Compact: skip structural wrappers without names that have children.
+	// We still increment the counter to keep IDs consistent with BuildIDMap.
 	if opts.Compact && !isInteractive && node.Name == "" && len(node.Children) > 0 {
+		*counter++
 		for _, child := range node.Children {
 			formatNodeWithOptions(buf, child, depth, counter, opts)
 		}
@@ -131,8 +136,12 @@ func formatNodeWithOptions(buf *strings.Builder, node *Node, depth int, counter 
 
 	*counter++
 
-	// MaxDepth: if we've exceeded the limit, still count but don't print
+	// MaxDepth: if we've exceeded the limit, still count children but don't print.
+	// We must recurse to keep counter consistent with BuildIDMap.
 	if opts.MaxDepth > 0 && depth >= opts.MaxDepth {
+		for _, child := range node.Children {
+			countNodeOnly(child, counter)
+		}
 		return
 	}
 
@@ -173,10 +182,28 @@ func formatNodeWithOptions(buf *strings.Builder, node *Node, depth int, counter 
 	buf.WriteByte('\n')
 
 	// Recurse into children
-	if opts.MaxDepth <= 0 || depth+1 < opts.MaxDepth {
+	for _, child := range node.Children {
+		formatNodeWithOptions(buf, child, depth+1, counter, opts)
+	}
+}
+
+// countNodeOnly increments the counter for a node and all its descendants
+// without producing any output. Used to keep IDs consistent when nodes are
+// hidden by MaxDepth or other filters.
+func countNodeOnly(node *Node, counter *int) {
+	if node == nil {
+		return
+	}
+	roleLower := strings.ToLower(node.Role)
+	if rootRoles[roleLower] {
 		for _, child := range node.Children {
-			formatNodeWithOptions(buf, child, depth+1, counter, opts)
+			countNodeOnly(child, counter)
 		}
+		return
+	}
+	*counter++
+	for _, child := range node.Children {
+		countNodeOnly(child, counter)
 	}
 }
 

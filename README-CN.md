@@ -16,7 +16,7 @@
 - 📦 **双重身份** — 既是 CLI 工具，也是可 `go get` 导入的 Go Library
 - ⚡ **启动飞快** — ~50ms（Go 二进制）对比 ~500ms（Node.js 方案）
 - 🔢 **简洁的元素引用** — `click 5`
-- 🔍 **内置 OCR** — 可选的 Tesseract 集成，处理图片密集页面
+- 🔍 **可选 OCR** — 通过 `-tags=ocr` 编译启用 Tesseract，处理图片密集页面
 - 🌐 **~86 个命令** — 完整对标 agent-browser v0.19.0
 
 > 📖 阅读完整的[快照格式规范](docs/snapshot-format.md)，了解详细的设计决策、BNF 语法和示例。([English Version](docs/snapshot-format-en.md))
@@ -49,9 +49,16 @@ mv ko-browser-linux-amd64 /usr/local/bin/kbr
 ### 源码编译
 
 ```bash
-go install github.com/libi/ko-browser@latest
-mv $(go env GOPATH)/bin/ko-browser $(go env GOPATH)/bin/kbr  # 可选重命名
+# 安装 kbr 二进制（无 CGO 依赖，无需 Tesseract）
+go install github.com/libi/ko-browser/cmd/kbr@latest
+
+# 带 OCR 支持（需要先安装 Tesseract）
+CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
+
+> **OCR 是可选功能。** 默认编译零 CGO 依赖，开箱即用。
+> 仅在需要 `kbr snapshot --ocr` 处理图片密集页面时才需要 `-tags=ocr`。
+> OCR 依赖 Tesseract：`brew install tesseract`（macOS）/ `apt install libtesseract-dev`（Linux）。
 
 ### 安装浏览器
 
@@ -332,15 +339,16 @@ kbr 按以下优先级加载配置（低 → 高）：
 
 ```
 kbr
-├── browser/     ★ 公开包 — 核心浏览器 API（可 go get 导入）
-├── axtree/      ★ 公开包 — AX Tree 提取、过滤、格式化
-├── selector/    ★ 公开包 — 元素选择器解析（ID/CSS/XPath）
-├── ocr/         ★ 公开包 — 可选 Tesseract OCR 引擎
-├── cmd/           CLI 层 — cobra 命令定义
-└── internal/      内部包 — 守护进程、会话管理（仅 CLI 使用）
+├── cmd/kbr/      ★ CLI 入口 — `go install .../cmd/kbr@latest`
+├── browser/      ★ 公开包 — 核心浏览器 API（可 go get 导入）
+├── axtree/       ★ 公开包 — AX Tree 提取、过滤、格式化
+├── selector/     ★ 公开包 — 元素选择器解析（ID/CSS/XPath）
+├── ocr/          ★ 公开包 — Tesseract OCR 引擎（需 build tag: ocr）
+├── cmd/            CLI 层 — cobra 命令定义
+└── internal/       内部包 — 守护进程、会话管理（仅 CLI 使用）
 ```
 
-`browser/`、`axtree/`、`selector/`、`ocr/` 均为公开包，可通过 `go get` 导入。`internal/` 仅供 CLI 守护进程使用。
+`browser/`、`axtree/`、`selector/`、`ocr/` 均为公开包，可通过 `go get` 导入。`internal/` 仅供 CLI 守护进程使用。OCR 需编译时添加 `-tags=ocr`。
 
 ---
 
@@ -351,7 +359,8 @@ kbr
 ```bash
 git clone https://github.com/libi/ko-browser.git
 cd ko-browser
-go build -o kbr .
+go build -o kbr ./cmd/kbr/              # 不含 OCR
+go build -tags=ocr -o kbr ./cmd/kbr/     # 含 OCR
 go test ./tests/ -v -timeout 180s
 ```
 

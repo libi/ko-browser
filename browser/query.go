@@ -21,13 +21,34 @@ func (b *Browser) GetURL() (string, error) {
 }
 
 // GetText returns the inner text of the element with the given display ID.
+// For form elements (input, textarea, select), it returns the value or placeholder.
 func (b *Browser) GetText(id int) (string, error) {
-	return b.evaluateOnElement(id, `function() { return this.innerText || this.textContent || ''; }`)
+	return b.evaluateOnElement(id, `function() {
+		var tag = (this.tagName || '').toUpperCase();
+		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+			if (typeof this.value === 'string' && this.value !== '') return this.value;
+			if (tag === 'SELECT' && this.selectedOptions && this.selectedOptions.length > 0) {
+				return Array.from(this.selectedOptions).map(function(o) { return o.textContent; }).join(', ');
+			}
+			return this.placeholder || '';
+		}
+		return this.innerText || this.textContent || '';
+	}`)
 }
 
 // GetHTML returns the inner HTML of the element with the given display ID.
+// For void elements (input, img, br, etc.) where innerHTML is always empty,
+// it returns outerHTML instead.
 func (b *Browser) GetHTML(id int) (string, error) {
-	return b.evaluateOnElement(id, `function() { return this.innerHTML || ''; }`)
+	return b.evaluateOnElement(id, `function() {
+		var html = this.innerHTML;
+		if (html === '' || html === undefined) {
+			var tag = (this.tagName || '').toUpperCase();
+			var voidTags = {'INPUT':1,'IMG':1,'BR':1,'HR':1,'META':1,'LINK':1,'AREA':1,'BASE':1,'COL':1,'EMBED':1,'SOURCE':1,'TRACK':1,'WBR':1};
+			if (voidTags[tag]) return this.outerHTML || '';
+		}
+		return html || '';
+	}`)
 }
 
 // GetValue returns the value of a form element with the given display ID.
@@ -160,11 +181,22 @@ func (b *Browser) evaluateString(expression string) (string, error) {
 
 // evaluateOnElement resolves a display ID to a remote object and calls a JS function on it.
 // Returns the string result.
+// If the backend node ID is stale (DOM has changed since last snapshot), it will
+// refresh the snapshot and retry once before falling back to interactive ordinal.
 func (b *Browser) evaluateOnElement(id int, function string, args ...any) (string, error) {
 	ctx, cancel := b.operationContext()
 	defer cancel()
 
 	remoteObj, _, err := b.resolveRemoteObject(ctx, id)
+	if err != nil {
+		// Backend node ID may be stale; refresh snapshot and retry once
+		if _, snapErr := b.Snapshot(); snapErr == nil {
+			if retryObj, _, retryErr := b.resolveRemoteObject(ctx, id); retryErr == nil {
+				remoteObj = retryObj
+				err = nil
+			}
+		}
+	}
 	if err != nil {
 		// Fallback: use interactiveOrdinal if available
 		return b.evaluateOnElementFallback(id, function, args...)
@@ -183,10 +215,18 @@ func (b *Browser) evaluateOnElement(id int, function string, args ...any) (strin
 		}
 		return nil
 	}))
+	// If callFunctionOn failed (e.g. node was collected), try fallback
+	if err != nil {
+		if fallbackResult, fallbackErr := b.evaluateOnElementFallback(id, function, args...); fallbackErr == nil {
+			return fallbackResult, nil
+		}
+	}
 	return result, err
 }
 
 // evaluateOnElementFallback uses querySelectorAll to find the element.
+// It first tries via interactive ordinal for interactive elements, then falls back
+// to a general tree-walker approach for any element.
 func (b *Browser) evaluateOnElementFallback(id int, function string, args ...any) (string, error) {
 	// Build args JSON array for JS
 	argsJSON := "[]"
@@ -199,18 +239,40 @@ func (b *Browser) evaluateOnElementFallback(id int, function string, args ...any
 	}
 
 	ordinal, err := b.interactiveOrdinal(id)
-	if err != nil {
-		// Not interactive, try all elements via tree walk
+	if err == nil {
+		// Interactive element: use querySelectorAll
+		expression := `(() => {
+			const elements = Array.from(document.querySelectorAll(` + mustJSON(interactiveQuery) + `));
+			const el = elements[` + mustJSON(ordinal) + `];
+			if (!el) throw new Error('element not found');
+			const fn = ` + function + `;
+			const args = ` + argsJSON + `;
+			return fn.apply(el, args);
+		})()`
+
+		return b.evaluateString(expression)
+	}
+
+	// Non-interactive element: use TreeWalker to find by position
+	// Walk all element/text nodes and match by ordinal position in the AX tree
+	allOrdinal := b.allElementOrdinal(id)
+	if allOrdinal < 0 {
 		return "", fmt.Errorf("element %d not found for query", id)
 	}
 
 	expression := `(() => {
-		const elements = Array.from(document.querySelectorAll(` + mustJSON(interactiveQuery) + `));
-		const el = elements[` + mustJSON(ordinal) + `];
-		if (!el) throw new Error('element not found');
-		const fn = ` + function + `;
-		const args = ` + argsJSON + `;
-		return fn.apply(el, args);
+		const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+		let idx = -1;
+		let node;
+		while ((node = walker.nextNode())) {
+			idx++;
+			if (idx === ` + mustJSON(allOrdinal) + `) {
+				const fn = ` + function + `;
+				const args = ` + argsJSON + `;
+				return fn.apply(node, args);
+			}
+		}
+		throw new Error('element not found at ordinal ' + ` + mustJSON(allOrdinal) + `);
 	})()`
 
 	return b.evaluateString(expression)

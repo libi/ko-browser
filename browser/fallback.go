@@ -55,6 +55,52 @@ func (b *Browser) interactiveOrdinal(id int) (int, error) {
 	return targetOrdinal, nil
 }
 
+// allElementOrdinal returns the ordinal position (0-based) of the element in a
+// TreeWalker traversal of all DOM elements. Returns -1 if not found.
+// This is used as a last-resort fallback when backend node IDs are stale and
+// the element is not interactive.
+func (b *Browser) allElementOrdinal(id int) int {
+	if b.lastSnap == nil {
+		return -1
+	}
+
+	displayID := 0
+	ordinal := -1
+	targetOrdinal := -1
+
+	var walk func(nodes []*axtree.Node) bool
+	walk = func(nodes []*axtree.Node) bool {
+		for _, node := range nodes {
+			if isRootRole(node.Role) {
+				if walk(node.Children) {
+					return true
+				}
+				continue
+			}
+
+			displayID++
+			// Count only element-like roles (skip pure text nodes)
+			roleLower := strings.ToLower(node.Role)
+			if roleLower != "statictext" && roleLower != "inlinetext" {
+				ordinal++
+			}
+			if displayID == id {
+				if roleLower != "statictext" && roleLower != "inlinetext" {
+					targetOrdinal = ordinal
+				}
+				return true
+			}
+			if walk(node.Children) {
+				return true
+			}
+		}
+		return false
+	}
+
+	walk(b.lastSnap.Nodes)
+	return targetOrdinal
+}
+
 func isInteractiveRole(role string) bool {
 	switch strings.ToLower(role) {
 	case "button", "link", "textbox", "searchbox", "checkbox", "radio", "combobox", "listbox", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "switch", "slider", "spinbutton", "tab", "treeitem", "scrollbar":

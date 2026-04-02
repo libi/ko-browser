@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Phase9 Get Command Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 id="title">Get Command Test</h1>
+
+    <!-- 1. Input with value (the main bug scenario: get text / get html on textbox) -->
+    <label>Search <input id="search-input" type="text" aria-label="Search" value="hello world"
+            placeholder="搜索关键词" /></label>
+
+    <!-- 2. Input with empty value but has placeholder -->
+    <label>Empty <input id="empty-input" type="text" aria-label="Empty Input" value="" placeholder="请输入内容" /></label>
+
+    <!-- 3. Textarea with content -->
+    <label>Comment
+        <textarea id="comment" aria-label="Comment" rows="3">This is a comment</textarea>
+    </label>
+
+    <!-- 4. Select dropdown -->
+    <label>Color
+        <select id="color-select" aria-label="Color">
+            <option value="red">Red</option>
+            <option value="green" selected>Green</option>
+            <option value="blue">Blue</option>
+        </select>
+    </label>
+
+    <!-- 5. Regular paragraph (normal element) -->
+    <p id="info-para" data-custom="test-attr">This is a <strong>bold</strong> paragraph.</p>
+
+    <!-- 6. Button -->
+    <button id="action-btn" type="button">Click Me</button>
+
+    <!-- 7. Link with nested content -->
+    <a id="nav-link" href="https://example.com">Visit <em>Example</em></a>
+
+    <!-- 8. Image (void element) -->
+    <img id="logo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Logo"
+        width="100" height="50" />
+
+    <!-- 9. Div with nested text content -->
+    <div id="status-box" role="status">Status: OK</div>
+
+    <!-- 10. Disabled input -->
+    <label>Disabled <input id="disabled-input" type="text" aria-label="Disabled Field" value="cannot edit"
+            disabled /></label>
+
+    <!-- 11. Checkbox -->
+    <label><input id="agree-checkbox" type="checkbox" aria-label="Agree" checked /> I agree</label>
+
+    <!-- 12. Password input -->
+    <label>Password <input id="password" type="password" aria-label="Password" value="secret123" /></label>
+</body>
+
+</html>
