@@ -210,18 +210,18 @@ func (b *Browser) TabClose(index int) error {
 
 	closeTID := pages[index].TargetID
 
-	closeErr := chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
-		return target.CloseTarget(closeTID).Do(ctx)
-	}))
-	if closeErr != nil {
-		return closeErr
-	}
-
-	// Remove any tracked context for the closed tab after the target is closed.
 	for i, entry := range b.tabs {
 		if entry.targetID == closeTID {
 			if entry.cancel != nil {
-				entry.cancel()
+				if err := chromedp.Cancel(entry.ctx); err != nil {
+					return err
+				}
+			} else {
+				if err := chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+					return target.CloseTarget(closeTID).Do(ctx)
+				})); err != nil {
+					return err
+				}
 			}
 			b.tabs = append(b.tabs[:i], b.tabs[i+1:]...)
 			switch {
@@ -234,10 +234,16 @@ func (b *Browser) TabClose(index int) error {
 					b.activeTab = len(b.tabs) - 1
 				}
 			}
-			break
+			b.lastSnap = nil
+			return nil
 		}
 	}
 
+	if err := chromedp.Run(b.ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		return target.CloseTarget(closeTID).Do(ctx)
+	})); err != nil {
+		return err
+	}
 	b.lastSnap = nil
 	return nil
 }

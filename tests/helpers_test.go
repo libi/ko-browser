@@ -43,7 +43,11 @@ func newBrowser(t *testing.T) *browser.Browser {
 			Timeout:  30 * time.Second,
 		})
 		if err == nil {
-			break
+			_, err = b.GetURL()
+			if err == nil {
+				break
+			}
+			b.Close()
 		}
 		if i < attempts-1 && strings.Contains(err.Error(), "chrome failed to start") {
 			time.Sleep(750 * time.Millisecond)
