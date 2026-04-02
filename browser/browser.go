@@ -46,6 +46,12 @@ func New(opts Options) (*Browser, error) {
 	if !opts.Headless {
 		allocOpts = append(allocOpts, chromedp.Flag("headless", false))
 	}
+	if shouldDisableSandbox() {
+		allocOpts = append(allocOpts,
+			chromedp.Flag("no-sandbox", true),
+			chromedp.Flag("disable-setuid-sandbox", true),
+		)
+	}
 	if opts.Profile != "" {
 		allocOpts = append(allocOpts, chromedp.UserDataDir(opts.Profile))
 	}

@@ -1,6 +1,10 @@
 package browser
 
-import "time"
+import (
+	"os"
+	"runtime"
+	"time"
+)
 
 type Options struct {
 	Headless bool
@@ -41,4 +45,17 @@ func (o Options) normalized() Options {
 		o.Timeout = defaults.Timeout
 	}
 	return o
+}
+
+func shouldDisableSandbox() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
+	if os.Getenv("KO_BROWSER_NO_SANDBOX") != "" {
+		return true
+	}
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		return true
+	}
+	return os.Getenv("CI") != ""
 }
