@@ -1,13 +1,33 @@
+<p align="center">
+  <h1 align="center">kbr (ko-browser)</h1>
+  <p align="center">一个简单、快速、节省 Token 的 AI Agent 浏览器工具，支持 CLI 和 Go Library。</p>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> •
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-命令速查">命令速查</a> •
+  <a href="#agent-notes-cn">Agent 阅读说明</a> •
+  <a href="docs/snapshot-format.md">快照格式规范</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/libi/ko-browser/releases"><img src="https://img.shields.io/github/v/release/libi/ko-browser?style=flat-square" alt="Release"></a>
+  <a href="https://github.com/libi/ko-browser/actions"><img src="https://img.shields.io/github/actions/workflow/status/libi/ko-browser/ci.yml?style=flat-square" alt="CI"></a>
+  <a href="https://pkg.go.dev/github.com/libi/ko-browser"><img src="https://pkg.go.dev/badge/github.com/libi/ko-browser.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/libi/ko-browser"><img src="https://goreportcard.com/badge/github.com/libi/ko-browser?style=flat-square" alt="Go Report Card"></a>
+</p>
 
 ---
 
-<a name="-中文文档"></a>
-
-# 🇨🇳 中文文档
-
 ## 简介
 
-**kbr** (ko-browser) 是简单,快速,节省Token的浏览器自动化工具，使用Go语言开发, 专为 AI Agent 设计。它同时提供 **CLI 命令行工具** 和 **Go Library 库**，自定义的无障碍树快照格式比同类工具**节省 46% 以上 token**。
+**kbr** (ko-browser) 是一个使用 Go 开发的浏览器自动化工具，专为 AI Agent 设计。它同时提供两种使用方式：
+
+- **CLI 命令行工具**，适合 shell 驱动的 agent 工作流
+- **Go Library 库**，适合嵌入到 Agent Runtime、工具层或服务端程序中
+
+它的自定义无障碍树快照格式，相比更冗长的同类输出可**节省 46% 以上 token**。
 
 ### ✨ 核心优势
 
@@ -17,13 +37,21 @@
 - ⚡ **启动飞快** — ~50ms（Go 二进制）对比 ~500ms（Node.js 方案）
 - 🔢 **简洁的元素引用** — `click 5`
 - 🔍 **可选 OCR** — 通过 `-tags=ocr` 编译启用 Tesseract，处理图片密集页面
-- 🌐 **~86 个命令** — 完整对标 agent-browser v0.19.0
+- 🌐 **~86 个命令** — 覆盖常见浏览器自动化工作流
 
 > 📖 阅读完整的[快照格式规范](docs/snapshot-format.md)，了解详细的设计决策、BNF 语法和示例。([English Version](docs/snapshot-format-en.md))
 
 ---
 
 ## 📦 安装
+
+### 安装方式选择
+
+| 使用场景 | 推荐方式 | 说明 |
+|---------|----------|------|
+| macOS 本地使用 | Homebrew | 默认安装带 OCR 的版本，并自动拉取 `tesseract` |
+| Linux / macOS 手动部署 | GitHub Releases | 下载预编译压缩包，并确保系统里有 Tesseract 运行时 |
+| Go 项目集成或自定义构建 | 源码编译 | 适合把 `kbr` 集成进自己的工具链或服务中 |
 
 ### Homebrew
 
@@ -76,9 +104,31 @@ kbr install              # 检查并下载 Chromium
 kbr install --with-deps  # 同时安装系统依赖（Linux）
 ```
 
+### 运行依赖
+
+- 必须有可用的 Chrome 或 Chromium；如果本机没有，先执行 `kbr install`
+- 带 OCR 的发布版本依赖宿主机上的 Tesseract 运行时库
+- 在 Linux CI 或受限沙箱环境中，Chrome 可能需要无沙箱模式等兼容参数才能启动
+
 ---
 
 ## 🚀 快速开始
+
+### Agent 常用循环
+
+这是最常见的 shell 驱动 Agent 工作流：
+
+```bash
+kbr open https://example.com
+kbr snapshot
+kbr click 5
+kbr type 8 "hello world"
+kbr press Enter
+kbr wait load
+kbr get text 12
+```
+
+思路就是：先 `snapshot` 读页面结构，再根据数字 ID 操作元素；页面变化后重新获取快照。
 
 ### CLI 使用
 
@@ -144,6 +194,16 @@ func main() {
 ---
 
 ## 📖 命令速查
+
+### 常见任务入口
+
+| 目标 | 常用命令 |
+|------|----------|
+| 打开页面并读取信息 | `open`、`snapshot`、`get title`、`get url` |
+| 表单和交互操作 | `click`、`type`、`fill`、`select`、`check`、`press` |
+| 等待页面变化 | `wait load`、`wait selector`、`wait text`、`wait url` |
+| 调试和核对结果 | `screenshot`、`console messages`、`errors list`、`highlight` |
+| 会话与状态管理 | `tab *`、`cookies *`、`storage *`、`state *` |
 
 ### 核心交互
 
@@ -358,6 +418,45 @@ kbr
 ```
 
 `browser/`、`axtree/`、`selector/`、`ocr/` 均为公开包，可通过 `go get` 导入。`internal/` 仅供 CLI 守护进程使用。OCR 需编译时添加 `-tags=ocr`。
+
+---
+
+<a name="agent-notes-cn"></a>
+
+## Agent 阅读说明
+
+如果你是正在阅读本 README 的 Agent，可以把 `kbr` 理解成一个带紧凑文本接口的可交互浏览器。
+
+- 优先使用 `kbr snapshot` 获取页面结构。它最省 token，也会返回稳定的数字引用。
+- 拿到快照后，优先用数字 ID 操作元素，例如 `kbr click 5`、`kbr type 8 "hello"`、`kbr get text 12`。
+- 页面跳转或 DOM 变化后要重新获取快照。元素 ID 只在当前快照内有效，不是永久选择器。
+- 优先使用 `kbr get`、`kbr find`、`kbr wait` 做定向读取，不要反复依赖整页截图。
+- 只有在页面内容主要存在于图片中，或 DOM / 无障碍树拿不到信息时，再启用 OCR。
+- 当你已经明确知道目标元素，或当前上下文里没有快照 ID 时，再退回使用 CSS / XPath 选择器。
+- 通过 Homebrew 或 GitHub Release 安装的发布版本都带 OCR，因此宿主机需要可用的 Tesseract 运行时库。
+
+### 作为 Agent 技能安装
+
+如果你的 Agent 框架支持本地技能，先安装 `kbr`，再把仓库里的 `skills/ko-browser` 目录复制到 Agent 的技能目录中，并命名为 `ko-browser/`。
+
+```yaml
+<agent-skills-dir>/
+  ko-browser/
+    SKILL.md
+```
+
+仓库里的技能文件在这里：
+
+- [`skills/ko-browser/SKILL.md`](https://github.com/libi/ko-browser/blob/main/skills/ko-browser/SKILL.md)
+
+示例：
+
+```bash
+mkdir -p <agent-skills-dir>/ko-browser
+cp skills/ko-browser/SKILL.md <agent-skills-dir>/ko-browser/SKILL.md
+```
+
+复制完成后，再确保 Agent 运行环境的 `PATH` 中可以找到 `kbr` 二进制。如果 Agent 宿主还支持直接注册可执行工具，也可以同时把 `kbr` 暴露为可调用工具。
 
 ---
 

@@ -1,14 +1,15 @@
 <p align="center">
   <h1 align="center">kbr (ko-browser)</h1>
-  <p align="center">A simple, fast, token-efficient browser for AI agents — CLI + Go Library</p>
+  <p align="center">A simple, fast, token-efficient browser for AI agents — CLI + Go Library.</p>
 </p>
 
 <p align="center">
+  <a href="README-CN.md">中文文档</a> •
   <a href="#-quick-start">Quick Start</a> •
+  <a href="#agent-notes">Agent Notes</a> •
   <a href="#-commands">Commands</a> •
-  <a href="#-library-usage">Library</a> •
-  <a href="docs/snapshot-format-en.md">Snapshot Format Spec</a> •
-  <a href="#-中文文档">中文文档</a>
+  <a href="#-library-api">Library</a> •
+  <a href="docs/snapshot-format-en.md">Snapshot Format Spec</a>
 </p>
 
 <p align="center">
@@ -20,7 +21,12 @@
 
 ---
 
-**ko-browser** is a browser automation tool built in Go, designed for AI agents. It provides both a **CLI tool** and a **Go library** with a custom accessibility tree snapshot format that saves **46%+ tokens** compared to alternatives.
+**ko-browser** is a browser automation tool built in Go for AI agents. It exposes the same core model in two forms:
+
+- a **CLI** for shell-driven agent workflows
+- a **Go library** for embedding browser control into agent runtimes and tools
+
+Its custom accessibility-tree snapshot format reduces prompt footprint by **46%+** compared with more verbose alternatives.
 
 ### ✨ Key Features
 
@@ -30,12 +36,12 @@
 - ⚡ **Fast startup** — ~50ms (Go binary) vs ~500ms (Node.js-based tools)
 - 🔢 **Simple element references** — `click 5` 
 - 🔍 **Optional OCR** — Tesseract integration via `-tags=ocr` build flag for image-heavy pages
-- 🌐 **~86 commands** — full parity with agent-browser v0.19.0
+- 🌐 **~86 commands** — broad coverage for browser automation workflows
 
 ### Snapshot Format Comparison
 
 ```
-┌─ kbr (46% fewer tokens) ──────────┐  ┌─ agent-browser ────────────────────┐
+┌─ kbr (46% fewer tokens) ──────────┐  ┌─ verbose snapshot output ──────────┐
 │ Page: "Example"                    │  │ - document "Example"               │
 │                                    │  │   - navigation "main":             │
 │ 1: link "Home"                     │  │     - link "Home" [ref=@e1]        │
@@ -49,6 +55,14 @@
 ---
 
 ## 📦 Installation
+
+### Choose an install path
+
+| Use case | Recommended path | Notes |
+|---------|------------------|-------|
+| macOS local usage | Homebrew | Installs an OCR-enabled build and pulls in `tesseract` |
+| Linux/macOS manual deployment | GitHub Releases | Download the prebuilt archive and make sure Tesseract runtime libraries are present |
+| Go-based integration or custom builds | From source | Best when embedding `kbr` into your own toolchain |
 
 ### Homebrew
 
@@ -101,9 +115,31 @@ kbr install              # check & download Chromium
 kbr install --with-deps  # also install system dependencies (Linux)
 ```
 
+### Runtime requirements
+
+- Chrome or Chromium is required. Run `kbr install` if you do not already have a compatible browser.
+- OCR-enabled builds expect Tesseract runtime libraries on the host.
+- On Linux CI or sandboxed environments, Chrome may require `--no-sandbox`-style fallbacks depending on the runner configuration.
+
 ---
 
 ## 🚀 Quick Start
+
+### Agent loop
+
+This is the most common shell-driven agent workflow:
+
+```bash
+kbr open https://example.com
+kbr snapshot
+kbr click 5
+kbr type 8 "hello world"
+kbr press Enter
+kbr wait load
+kbr get text 12
+```
+
+Use `snapshot` to get the current page structure, act on numeric refs, then re-snapshot after the page changes.
 
 ### CLI
 
@@ -170,6 +206,16 @@ func main() {
 ---
 
 ## 📖 Commands
+
+### Common flows
+
+| Goal | Commands |
+|------|----------|
+| Navigate and inspect | `open`, `snapshot`, `get title`, `get url` |
+| Interact with forms | `click`, `type`, `fill`, `select`, `check`, `press` |
+| Wait for state changes | `wait load`, `wait selector`, `wait text`, `wait url` |
+| Debug and verify | `screenshot`, `console messages`, `errors list`, `highlight` |
+| Work with sessions | `tab *`, `cookies *`, `storage *`, `state *` |
 
 ### Core Interaction
 
@@ -730,6 +776,45 @@ kbr
 ```
 
 The `browser/`, `axtree/`, `selector/`, and `ocr/` packages are all public and importable via `go get`. The `internal/` package is only used by the CLI daemon. OCR requires `-tags=ocr` at build time.
+
+---
+
+<a name="agent-notes"></a>
+
+## Agent Notes
+
+If you are an agent reading this README, use `kbr` as an interactive browser with a compact text interface.
+
+- Prefer `kbr snapshot` as the primary page representation. It is the most token-efficient output and gives stable numeric refs.
+- Use numeric refs like `kbr click 5`, `kbr type 8 "hello"`, and `kbr get text 12` after taking a fresh snapshot.
+- Re-snapshot after navigation or DOM mutations. Element IDs are snapshot-local, not permanent selectors.
+- Use `kbr get`, `kbr find`, and `kbr wait` for targeted reads instead of repeatedly taking full screenshots.
+- Use OCR only when the page content is image-heavy or inaccessible through the DOM/accessibility tree.
+- Prefer CSS/XPath selectors only when you already know the target precisely or when numeric refs are unavailable.
+- The published Homebrew package and release binaries are built with OCR enabled, so Tesseract runtime libraries are expected on the host.
+
+### Install as an agent skill
+
+If your agent framework supports local skills, install `kbr` first, then copy the repository skill directory into your agent's skills directory as `ko-browser/`.
+
+```yaml
+<agent-skills-dir>/
+  ko-browser/
+    SKILL.md
+```
+
+The source skill lives here:
+
+- [`skills/ko-browser/SKILL.md`](https://github.com/libi/ko-browser/blob/main/skills/ko-browser/SKILL.md)
+
+Example:
+
+```bash
+mkdir -p <agent-skills-dir>/ko-browser
+cp skills/ko-browser/SKILL.md <agent-skills-dir>/ko-browser/SKILL.md
+```
+
+After that, make sure the `kbr` binary is available in the agent runtime `PATH`. For agent hosts that also support executable-tool registration, you can expose `kbr` directly in addition to the skill file.
 
 ---
 
