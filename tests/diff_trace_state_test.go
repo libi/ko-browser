@@ -576,15 +576,16 @@ func TestProfile_Option(t *testing.T) {
 	if err != nil {
 		t.Fatalf("browser.New with profile: %v", err)
 	}
-	t.Cleanup(func() { b.Close() })
 
 	// Navigate to a page
 	if err := b.Open(testdataURL("phase7_test.html")); err != nil {
+		b.Close()
 		t.Fatalf("Open: %v", err)
 	}
 
 	// Set some data in localStorage
 	if _, err := b.Eval(`localStorage.setItem("profile_test", "yes")`); err != nil {
+		b.Close()
 		t.Fatalf("set localStorage: %v", err)
 	}
 
@@ -594,6 +595,7 @@ func TestProfile_Option(t *testing.T) {
 	}
 
 	t.Logf("Profile directory created at: %s", profileDir)
+	b.Close()
 }
 
 // ---------- Config File ----------
