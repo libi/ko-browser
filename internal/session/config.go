@@ -18,7 +18,6 @@ type Options struct {
 	Profile   string
 	StatePath string
 
-	// Phase 8.3: Global options
 	UserAgent         string
 	Proxy             string
 	ProxyBypass       string
@@ -30,7 +29,6 @@ type Options struct {
 	ScreenshotDir     string
 	ScreenshotFormat  string
 
-	// Phase 8.4: Confirmation
 	ConfirmActions []string
 }
 
@@ -49,14 +47,12 @@ type Request struct {
 	WaitDuration    time.Duration           `json:"waitDuration,omitempty"`
 	SnapshotOptions browser.SnapshotOptions `json:"snapshotOptions,omitempty"`
 
-	// Phase 3: Screenshot/PDF/Eval/Find
 	FilePath       string         `json:"filePath,omitempty"`
 	ScreenshotArgs ScreenshotArgs `json:"screenshotArgs,omitempty"`
 	PDFArgs        PDFArgs        `json:"pdfArgs,omitempty"`
 	Role           string         `json:"role,omitempty"`
 	N              int            `json:"n,omitempty"`
 
-	// Phase 4: Drag/Upload/Download/Mouse
 	DstID    int      `json:"dstId,omitempty"`
 	Files    []string `json:"files,omitempty"`
 	SaveDir  string   `json:"saveDir,omitempty"`
@@ -66,7 +62,6 @@ type Request struct {
 	DeltaY   float64  `json:"deltaY,omitempty"`
 	MouseBtn string   `json:"mouseBtn,omitempty"`
 
-	// Phase 5: Tab/Network/Storage
 	TabIndex    int                `json:"tabIndex,omitempty"`
 	Pattern     string             `json:"pattern,omitempty"`
 	RouteAction string             `json:"routeAction,omitempty"`
@@ -75,7 +70,6 @@ type Request struct {
 	StorageKey  string             `json:"storageKey,omitempty"`
 	StorageVal  string             `json:"storageVal,omitempty"`
 
-	// Phase 6: Settings/Debug/Clipboard
 	Width         int                    `json:"width,omitempty"`
 	Height        int                    `json:"height,omitempty"`
 	DeviceName    string                 `json:"deviceName,omitempty"`
@@ -90,7 +84,6 @@ type Request struct {
 	ClipboardText string                 `json:"clipboardText,omitempty"`
 	ConsoleLevel  string                 `json:"consoleLevel,omitempty"`
 
-	// Phase 7: Advanced features
 	Target            string  `json:"target,omitempty"`            // connect target (port or ws URL)
 	BaselineFile      string  `json:"baselineFile,omitempty"`      // diff baseline file path
 	OutputFile        string  `json:"outputFile,omitempty"`        // output file path for diff/trace/profiler/record
@@ -100,7 +93,6 @@ type Request struct {
 	Categories        string  `json:"categories,omitempty"`        // trace categories
 	StatePath         string  `json:"statePath,omitempty"`         // state import/export path
 
-	// Phase 8: Missing commands/flags
 	NewTab    bool    `json:"newTab,omitempty"`    // click with new tab
 	Exact     bool    `json:"exact,omitempty"`     // exact matching for find
 	Scale     float64 `json:"scale,omitempty"`     // viewport scale factor
@@ -133,22 +125,18 @@ type Response struct {
 	Box          *browser.BoxResult `json:"box,omitempty"`
 	FilePath     string             `json:"filePath,omitempty"`
 
-	// Phase 5
 	Tabs         []browser.TabInfo        `json:"tabs,omitempty"`
 	Cookies      []browser.CookieInfo     `json:"cookies,omitempty"`
 	Requests     []browser.NetworkRequest `json:"requests,omitempty"`
 	StorageItems map[string]string        `json:"storageItems,omitempty"`
 
-	// Phase 6
 	ConsoleMessages []browser.ConsoleMessage `json:"consoleMessages,omitempty"`
 	PageErrors      []browser.PageError      `json:"pageErrors,omitempty"`
 
-	// Phase 7
 	DiffResult     *browser.DiffSnapshotResult   `json:"diffResult,omitempty"`
 	ScreenshotDiff *browser.DiffScreenshotResult `json:"screenshotDiff,omitempty"`
 	DiffURLResult  *browser.DiffURLResult        `json:"diffURLResult,omitempty"`
 
-	// Phase 8.4: Confirmation
 	ConfirmationRequired bool   `json:"confirmationRequired,omitempty"`
 	ConfirmID            string `json:"confirmId,omitempty"`
 }

@@ -19,7 +19,6 @@ type Options struct {
 	// (cookies + localStorage) to import when creating the browser.
 	StatePath string
 
-	// Phase 8.3: Global options
 	UserAgent         string   // custom User-Agent string
 	Proxy             string   // proxy server URL (e.g. "http://proxy:8080" or "socks5://proxy:1080")
 	ProxyBypass       string   // comma-separated hosts to bypass proxy

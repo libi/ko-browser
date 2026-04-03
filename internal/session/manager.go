@@ -133,8 +133,6 @@ func (c *Client) DblClick(id int) error {
 	return err
 }
 
-// Phase 2: Navigation
-
 func (c *Client) Back() error {
 	_, err := c.call(Request{Command: "back"}, true)
 	return err
@@ -149,8 +147,6 @@ func (c *Client) Reload() error {
 	_, err := c.call(Request{Command: "reload"}, true)
 	return err
 }
-
-// Phase 2: Information retrieval
 
 func (c *Client) GetTitle() (string, error) {
 	resp, err := c.call(Request{Command: "get.title"}, true)
@@ -224,8 +220,6 @@ func (c *Client) GetStyles(id int) (string, error) {
 	return resp.Text, nil
 }
 
-// Phase 2: State queries
-
 func (c *Client) IsVisible(id int) (bool, error) {
 	resp, err := c.call(Request{Command: "is.visible", ID: id}, true)
 	if err != nil {
@@ -259,8 +253,6 @@ func (c *Client) IsChecked(id int) (bool, error) {
 	return false, nil
 }
 
-// Phase 2: Wait commands
-
 func (c *Client) Wait(d time.Duration) error {
 	_, err := c.call(Request{Command: "wait", WaitDuration: d}, true)
 	return err
@@ -290,8 +282,6 @@ func (c *Client) WaitFunc(expression string) error {
 	_, err := c.call(Request{Command: "wait.func", Expression: expression}, true)
 	return err
 }
-
-// Phase 3: Screenshot/PDF/Eval/Find
 
 func (c *Client) Screenshot(path string, args ScreenshotArgs) error {
 	_, err := c.call(Request{Command: "screenshot", FilePath: path, ScreenshotArgs: args}, true)
@@ -351,21 +341,15 @@ func (c *Client) FindLast(cssSelector string) (string, error) {
 	return resp.Text, nil
 }
 
-// Phase 4: Drag
-
 func (c *Client) Drag(srcID, dstID int) error {
 	_, err := c.call(Request{Command: "drag", ID: srcID, DstID: dstID}, true)
 	return err
 }
 
-// Phase 4: Upload
-
 func (c *Client) Upload(id int, files ...string) error {
 	_, err := c.call(Request{Command: "upload", ID: id, Files: files}, true)
 	return err
 }
-
-// Phase 4: Download
 
 func (c *Client) Download(id int, saveDir string) (string, error) {
 	resp, err := c.call(Request{Command: "download", ID: id, SaveDir: saveDir}, true)
@@ -374,8 +358,6 @@ func (c *Client) Download(id int, saveDir string) (string, error) {
 	}
 	return resp.FilePath, nil
 }
-
-// Phase 4: Mouse operations
 
 func (c *Client) MouseMove(x, y float64) error {
 	_, err := c.call(Request{Command: "mouse.move", X: x, Y: y}, true)
@@ -402,8 +384,6 @@ func (c *Client) MouseClick(x, y float64, button string) error {
 	return err
 }
 
-// Phase 5: Tab management
-
 func (c *Client) TabList() ([]browser.TabInfo, error) {
 	resp, err := c.call(Request{Command: "tab.list"}, true)
 	if err != nil {
@@ -426,8 +406,6 @@ func (c *Client) TabSwitch(index int) error {
 	_, err := c.call(Request{Command: "tab.switch", TabIndex: index}, true)
 	return err
 }
-
-// Phase 5: Network
 
 func (c *Client) NetworkRoute(pattern, action string) error {
 	_, err := c.call(Request{Command: "network.route", Pattern: pattern, RouteAction: action}, true)
@@ -457,8 +435,6 @@ func (c *Client) NetworkClearRequests() error {
 	return err
 }
 
-// Phase 5: Cookies
-
 func (c *Client) CookiesGet() ([]browser.CookieInfo, error) {
 	resp, err := c.call(Request{Command: "cookies.get"}, true)
 	if err != nil {
@@ -481,8 +457,6 @@ func (c *Client) CookiesClear() error {
 	_, err := c.call(Request{Command: "cookies.clear"}, true)
 	return err
 }
-
-// Phase 5: Storage
 
 func (c *Client) StorageGet(storageType, key string) (string, error) {
 	resp, err := c.call(Request{Command: "storage.get", StorageType: storageType, StorageKey: key}, true)
@@ -514,8 +488,6 @@ func (c *Client) StorageGetAll(storageType string) (map[string]string, error) {
 	}
 	return resp.StorageItems, nil
 }
-
-// Phase 6: Settings
 
 func (c *Client) SetViewport(width, height int) error {
 	_, err := c.call(Request{Command: "set.viewport", Width: width, Height: height}, true)
@@ -562,8 +534,6 @@ func (c *Client) SetColorScheme(scheme string) error {
 	return err
 }
 
-// Phase 6: Console/Debug
-
 func (c *Client) ConsoleStart() error {
 	_, err := c.call(Request{Command: "console.start"}, true)
 	return err
@@ -605,8 +575,6 @@ func (c *Client) OpenDevTools() error {
 	return err
 }
 
-// Phase 6: Clipboard
-
 func (c *Client) ClipboardRead() (string, error) {
 	resp, err := c.call(Request{Command: "clipboard.read"}, true)
 	if err != nil {
@@ -619,8 +587,6 @@ func (c *Client) ClipboardWrite(text string) error {
 	_, err := c.call(Request{Command: "clipboard.write", ClipboardText: text}, true)
 	return err
 }
-
-// Phase 7: Diff
 
 func (c *Client) DiffSnapshot(baselineFile string, snapOpts browser.SnapshotOptions) (Response, error) {
 	return c.call(Request{Command: "diff.snapshot", BaselineFile: baselineFile, SnapshotOptions: snapOpts}, true)
@@ -648,8 +614,6 @@ func (c *Client) DiffURL(url1, url2 string, includeScreenshot, fullPage bool, th
 	}, true)
 }
 
-// Phase 7: Trace
-
 func (c *Client) TraceStart(categories string) error {
 	_, err := c.call(Request{Command: "trace.start", Categories: categories}, true)
 	return err
@@ -660,8 +624,6 @@ func (c *Client) TraceStop(outputFile string) error {
 	return err
 }
 
-// Phase 7: Profiler
-
 func (c *Client) ProfilerStart() error {
 	_, err := c.call(Request{Command: "profiler.start"}, true)
 	return err
@@ -671,8 +633,6 @@ func (c *Client) ProfilerStop(outputFile string) error {
 	_, err := c.call(Request{Command: "profiler.stop", OutputFile: outputFile}, true)
 	return err
 }
-
-// Phase 7: Record
 
 func (c *Client) RecordStart(outputPath string) error {
 	_, err := c.call(Request{Command: "record.start", OutputFile: outputPath}, true)
@@ -687,8 +647,6 @@ func (c *Client) RecordStop() (int, error) {
 	return resp.IntResult, nil
 }
 
-// Phase 7: State
-
 func (c *Client) ExportState(path string) error {
 	_, err := c.call(Request{Command: "state.export", StatePath: path}, true)
 	return err
@@ -698,8 +656,6 @@ func (c *Client) ImportState(path string) error {
 	_, err := c.call(Request{Command: "state.import", StatePath: path}, true)
 	return err
 }
-
-// Phase 8: Missing commands
 
 func (c *Client) KeyboardInsertText(text string) error {
 	_, err := c.call(Request{Command: "keyboard.inserttext", Text: text}, true)
@@ -893,7 +849,7 @@ func (c *Client) startDaemon() error {
 	if c.opts.StatePath != "" {
 		args = append(args, "--state", c.opts.StatePath)
 	}
-	// Phase 8.3: Global options
+
 	if c.opts.UserAgent != "" {
 		args = append(args, "--user-agent", c.opts.UserAgent)
 	}

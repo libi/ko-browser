@@ -175,7 +175,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		return true, nil
 
-	// Phase 2: Navigation
 	case "back":
 		err = b.Back()
 	case "forward":
@@ -183,7 +182,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "reload":
 		err = b.Reload()
 
-	// Phase 2: Information retrieval
 	case "get.title":
 		var text string
 		text, err = b.GetTitle()
@@ -267,7 +265,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.Text = text
 		}
 
-	// Phase 2: State queries
 	case "is.visible":
 		if req.ID <= 0 {
 			err = fmt.Errorf("id must be positive")
@@ -299,7 +296,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.BoolResult = &v
 		}
 
-	// Phase 2: Wait commands
 	case "wait":
 		err = b.Wait(req.WaitDuration)
 	case "wait.selector":
@@ -329,7 +325,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.WaitFunc(req.Expression)
 
-	// Phase 3: Screenshot
 	case "screenshot":
 		if req.FilePath == "" {
 			err = fmt.Errorf("file path is required")
@@ -349,7 +344,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			})
 		}
 
-	// Phase 3: PDF
 	case "pdf":
 		if req.FilePath == "" {
 			err = fmt.Errorf("file path is required")
@@ -360,7 +354,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			PrintBG:   req.PDFArgs.PrintBG,
 		})
 
-	// Phase 3: Eval
 	case "eval":
 		if req.Expression == "" {
 			err = fmt.Errorf("expression is required")
@@ -372,7 +365,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.Text = result
 		}
 
-	// Phase 3: Find
 	case "find.role":
 		var result *browser.FindResults
 		var findOpts []browser.FindOption
@@ -432,7 +424,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.Text = result.Text
 		}
 
-	// Phase 4: Drag
 	case "drag":
 		if req.ID <= 0 {
 			err = fmt.Errorf("source id must be positive")
@@ -444,7 +435,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.Drag(req.ID, req.DstID)
 
-	// Phase 4: Upload
 	case "upload":
 		if req.ID <= 0 {
 			err = fmt.Errorf("id must be positive")
@@ -456,7 +446,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.Upload(req.ID, req.Files...)
 
-	// Phase 4: Download
 	case "download":
 		if req.ID <= 0 {
 			err = fmt.Errorf("id must be positive")
@@ -472,7 +461,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.FilePath = path
 		}
 
-	// Phase 4: Mouse operations
 	case "mouse.move":
 		err = b.MouseMove(req.X, req.Y)
 	case "mouse.down":
@@ -496,7 +484,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.MouseClick(req.X, req.Y, opts)
 
-	// Phase 5: Tab management
 	case "tab.list":
 		var tabs []browser.TabInfo
 		tabs, err = b.TabList()
@@ -510,7 +497,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "tab.switch":
 		err = b.TabSwitch(req.TabIndex)
 
-	// Phase 5: Network
 	case "network.route":
 		action := browser.RouteBlock
 		if req.RouteAction == "continue" {
@@ -530,7 +516,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "network.clear-requests":
 		b.NetworkClearRequests()
 
-	// Phase 5: Cookies
 	case "cookies.get":
 		var cookies []browser.CookieInfo
 		cookies, err = b.CookiesGet()
@@ -544,7 +529,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "cookies.clear":
 		err = b.CookiesClear()
 
-	// Phase 5: Storage
 	case "storage.get":
 		var val string
 		val, err = b.StorageGet(req.StorageType, req.StorageKey)
@@ -564,7 +548,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.StorageItems = items
 		}
 
-	// Phase 6: Settings
 	case "set.viewport":
 		if req.Width <= 0 || req.Height <= 0 {
 			err = fmt.Errorf("width and height must be positive")
@@ -608,7 +591,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.SetColorScheme(req.ColorScheme)
 
-	// Phase 6: Console/Debug
 	case "console.start":
 		err = b.ConsoleStart()
 	case "console.messages":
@@ -640,7 +622,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "devtools":
 		err = b.OpenDevTools()
 
-	// Phase 6: Clipboard
 	case "clipboard.read":
 		var text string
 		text, err = b.ClipboardRead()
@@ -650,7 +631,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "clipboard.write":
 		err = b.ClipboardWrite(req.ClipboardText)
 
-	// Phase 7: Diff
 	case "diff.snapshot":
 		var result *browser.DiffSnapshotResult
 		result, err = b.DiffSnapshot(browser.DiffSnapshotOptions{
@@ -696,7 +676,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			}
 		}
 
-	// Phase 7: Trace
 	case "trace.start":
 		if req.Categories != "" {
 			err = b.TraceStart(req.Categories)
@@ -706,13 +685,11 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 	case "trace.stop":
 		err = b.TraceStop(req.OutputFile)
 
-	// Phase 7: Profiler
 	case "profiler.start":
 		err = b.ProfilerStart()
 	case "profiler.stop":
 		err = b.ProfilerStop(req.OutputFile)
 
-	// Phase 7: Record
 	case "record.start":
 		err = b.RecordStart(req.OutputFile)
 	case "record.stop":
@@ -722,7 +699,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			resp.IntResult = frameCount
 		}
 
-	// Phase 7: State export/import
 	case "state.export":
 		if req.StatePath == "" {
 			err = fmt.Errorf("state file path is required")
@@ -736,7 +712,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		}
 		err = b.ImportState(req.StatePath)
 
-	// Phase 8: Missing commands
 	case "keyboard.inserttext":
 		if req.Text == "" {
 			err = fmt.Errorf("text is required")

@@ -22,7 +22,6 @@ var rootFlags struct {
 	statePath         string
 	config            string
 
-	// Phase 8.3: Global options
 	userAgent         string
 	proxy             string
 	proxyBypass       string
@@ -62,7 +61,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootFlags.statePath, "state", "", "JSON file to load saved browser state (cookies + localStorage)")
 	rootCmd.PersistentFlags().StringVar(&rootFlags.config, "config", "", "path to config file (default: auto-detect)")
 
-	// Phase 8.3: Global options
 	rootCmd.PersistentFlags().StringVar(&rootFlags.userAgent, "user-agent", "", "custom User-Agent string")
 	rootCmd.PersistentFlags().StringVar(&rootFlags.proxy, "proxy", "", "proxy server URL (e.g. http://proxy:8080)")
 	rootCmd.PersistentFlags().StringVar(&rootFlags.proxyBypass, "proxy-bypass", "", "comma-separated hosts to bypass proxy")
@@ -230,7 +228,6 @@ func applyConfigFile(path string) error {
 		rootFlags.contentBoundaries = *cfg.ContentBoundaries
 	}
 
-	// Phase 8.3: Apply new global options from config
 	if cfg.UserAgent != "" && !rootCmd.PersistentFlags().Lookup("user-agent").Changed {
 		rootFlags.userAgent = cfg.UserAgent
 	}

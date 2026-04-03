@@ -21,12 +21,10 @@ type Browser struct {
 	tabs         []tabEntry
 	activeTab    int
 
-	// Phase 7
 	trace     *traceState
 	profiling bool
 	recording *recordState
 
-	// Phase 8.3: Global options
 	downloadPath     string
 	screenshotDir    string
 	screenshotFormat string
@@ -57,7 +55,6 @@ func New(opts Options) (*Browser, error) {
 		allocOpts = append(allocOpts, chromedp.UserDataDir(opts.Profile))
 	}
 
-	// Phase 8.3: Global options
 	if opts.UserAgent != "" {
 		allocOpts = append(allocOpts, chromedp.UserAgent(opts.UserAgent))
 	}
