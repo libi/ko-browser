@@ -69,10 +69,13 @@ Its custom accessibility-tree snapshot format reduces prompt footprint by **46%+
 ```bash
 brew tap libi/tap
 brew install ko-browser
+# or without tapping first:
+brew install libi/tap/ko-browser
 ```
 
 > Homebrew installs `kbr` with OCR enabled.
 > It pulls in `tesseract` automatically and builds from source.
+> The tap repository is [libi/homebrew-tap](https://github.com/libi/homebrew-tap).
 
 ### Pre-built binaries
 

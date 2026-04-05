@@ -58,10 +58,13 @@
 ```bash
 brew tap libi/tap
 brew install ko-browser
+# 或者不先 tap，直接安装：
+brew install libi/tap/ko-browser
 ```
 
 > Homebrew 安装的是带 OCR 的 `kbr`。
 > 它会自动安装 `tesseract`，并通过源码编译。
+> Tap 仓库是 [libi/homebrew-tap](https://github.com/libi/homebrew-tap)。
 
 ### 预编译二进制
 
