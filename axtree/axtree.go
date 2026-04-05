@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/accessibility"
 	internalaxtree "github.com/libi/ko-browser/internal/axtree"
 	"github.com/libi/ko-browser/ocr"
@@ -14,6 +15,10 @@ type FormatOptions = internalaxtree.FormatOptions
 
 func Extract(ctx context.Context) ([]*accessibility.Node, error) {
 	return internalaxtree.Extract(ctx)
+}
+
+func ExtractFrame(ctx context.Context, frameID cdp.FrameID) ([]*accessibility.Node, error) {
+	return internalaxtree.ExtractFrame(ctx, frameID)
 }
 
 func DumpRaw(w io.Writer, nodes []*accessibility.Node) {
