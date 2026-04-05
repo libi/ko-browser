@@ -64,7 +64,7 @@ jobs:
           git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/${TAP_REPOSITORY}.git" /tmp/homebrew-tap
           mkdir -p /tmp/homebrew-tap/Formula
 
-          ./scripts/render-homebrew-formula.sh "${TAG}" "${SHA256}" > /tmp/homebrew-tap/Formula/ko-browser.rb
+          bash ./scripts/render-homebrew-formula.sh "${TAG}" "${SHA256}" > /tmp/homebrew-tap/Formula/ko-browser.rb
 
           cd /tmp/homebrew-tap
           git config user.name "github-actions[bot]"
