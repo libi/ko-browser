@@ -56,49 +56,49 @@ Its custom accessibility-tree snapshot format reduces prompt footprint by **46%+
 
 ## 📦 Installation
 
-### Choose an install path
+### macOS
 
-| Use case | Recommended path | Notes |
-|---------|------------------|-------|
-| macOS local usage | Homebrew | Installs an OCR-enabled build and pulls in `tesseract` |
-| Linux/macOS manual deployment | GitHub Releases | Download the prebuilt archive and make sure Tesseract runtime libraries are present |
-| Go-based integration or custom builds | From source | Best when embedding `kbr` into your own toolchain |
-
-### Homebrew
+Use Homebrew:
 
 ```bash
 brew tap libi/tap
 brew install ko-browser
-# or without tapping first:
+
+# or install directly without tapping first
 brew install libi/tap/ko-browser
 ```
 
-> Homebrew installs `kbr` with OCR enabled.
-> It pulls in `tesseract` automatically and builds from source.
+> This installs the OCR-enabled `kbr` build.
+> Homebrew also pulls in `tesseract` automatically.
 > The tap repository is [libi/homebrew-tap](https://github.com/libi/homebrew-tap).
 
-### Pre-built binaries
+### Windows
 
-Download from [GitHub Releases](https://github.com/libi/ko-browser/releases):
+Download the latest release package from [GitHub Releases](https://github.com/libi/ko-browser/releases), then unzip and run `kbr.exe`.
 
-> Release binaries are also built with OCR enabled.
-> Install Tesseract first so the runtime OCR libraries are available: `brew install tesseract` on macOS, `apt install libtesseract-dev` on Linux.
+```powershell
+Invoke-WebRequest -Uri https://github.com/libi/ko-browser/releases/latest/download/ko-browser-windows-amd64.zip -OutFile ko-browser-windows-amd64.zip
+Expand-Archive .\ko-browser-windows-amd64.zip -DestinationPath .\ko-browser
+.\ko-browser\kbr.exe --help
+```
+
+If you want to use `kbr` globally, move `kbr.exe` into a directory that is already in your `PATH`, or add the extracted folder to `PATH`.
+
+### Linux
+
+Download the latest release package from [GitHub Releases](https://github.com/libi/ko-browser/releases), extract it, and place `kbr` somewhere in your `PATH`.
 
 ```bash
-# macOS (Apple Silicon)
-curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-arm64.tar.gz
-tar xzf ko-browser-darwin-arm64.tar.gz
-mv kbr /usr/local/bin/kbr
-
-# macOS (Intel)
-curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-amd64.tar.gz
-tar xzf ko-browser-darwin-amd64.tar.gz
-mv kbr /usr/local/bin/kbr
-
-# Linux (amd64)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-linux-amd64.tar.gz
 tar xzf ko-browser-linux-amd64.tar.gz
-mv kbr /usr/local/bin/kbr
+chmod +x kbr
+sudo mv kbr /usr/local/bin/kbr
+```
+
+Release binaries are built with OCR enabled, so make sure the Tesseract runtime is available on the host:
+
+```bash
+sudo apt install libtesseract-dev
 ```
 
 ### From source
