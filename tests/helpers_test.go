@@ -138,6 +138,30 @@ func must(t *testing.T, err error) {
 	}
 }
 
+func removeDirEventually(t *testing.T, path string) {
+	t.Helper()
+	if path == "" {
+		return
+	}
+
+	deadline := time.Now().Add(5 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		lastErr = os.RemoveAll(path)
+		if lastErr == nil {
+			if _, statErr := os.Stat(path); os.IsNotExist(statErr) {
+				return
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if lastErr == nil {
+		lastErr = fmt.Errorf("directory still exists after cleanup retries")
+	}
+	t.Fatalf("cleanup dir %s: %v", path, lastErr)
+}
+
 // evalVoid evaluates a JS expression and discards the result. Fatals on error.
 func evalVoid(t *testing.T, b *browser.Browser, expression string) {
 	t.Helper()
