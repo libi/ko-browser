@@ -16,7 +16,7 @@
   <a href="https://github.com/libi/ko-browser/releases"><img src="https://img.shields.io/github/v/release/libi/ko-browser?style=flat-square" alt="Release"></a>
   <a href="https://github.com/libi/ko-browser/actions"><img src="https://img.shields.io/github/actions/workflow/status/libi/ko-browser/ci.yml?style=flat-square" alt="CI"></a>
   <a href="https://pkg.go.dev/github.com/libi/ko-browser"><img src="https://pkg.go.dev/badge/github.com/libi/ko-browser.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/libi/ko-browser"><img src="https://goreportcard.com/badge/github.com/libi/ko-browser?style=flat-square" alt="Go Report Card"></a>
+  <a href="https://goreportcard.com/report/github.com/libi/ko-browser"><img src="https://goreportcard.com/badge/github.com/libi/ko-browser" alt="Go Report Card"></a>
 </p>
 
 ---
