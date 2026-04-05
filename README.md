@@ -101,15 +101,18 @@ Release binaries are built with OCR enabled, so make sure the Tesseract runtime 
 sudo apt install libtesseract-dev
 ```
 
-### From source
+### Go install
 
 ```bash
+# Install kbr without OCR
+go install github.com/libi/ko-browser/cmd/kbr@latest
+
 # Install kbr with OCR support (requires Tesseract to be installed)
 CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
 
-> OCR is required for the published packages.
-> This requires Tesseract: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
+> Use the plain `go install` command if you only need the core browser automation features.
+> If you want OCR support, use the `-tags=ocr` variant and install Tesseract first: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
 
 ### Install Chrome (if not already installed)
 

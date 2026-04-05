@@ -90,15 +90,18 @@ Release 二进制默认带 OCR，请确保宿主机安装了 Tesseract 运行时
 sudo apt install libtesseract-dev
 ```
 
-### 源码编译
+### Go install
 
 ```bash
+# 安装不带 OCR 的 kbr
+go install github.com/libi/ko-browser/cmd/kbr@latest
+
 # 安装带 OCR 支持的 kbr（需要先安装 Tesseract）
 CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
 
-> 发布出去的安装方式统一使用 OCR 版本。
-> OCR 依赖 Tesseract：`brew install tesseract`（macOS）/ `apt install libtesseract-dev`（Linux）。
+> 如果只需要基础浏览器能力，可以直接使用 `go install`。
+> 如果需要 OCR，使用带 `-tags=ocr` 的安装命令，并先安装 Tesseract：`brew install tesseract`（macOS）/ `apt install libtesseract-dev`（Linux）。
 
 ### 安装浏览器
 
