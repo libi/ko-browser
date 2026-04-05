@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to the Homebrew tap (for example: v0.1.1)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -38,10 +43,21 @@ jobs:
 
       - name: Update Homebrew tap formula
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: |
           TAP_REPOSITORY="${HOMEBREW_TAP_REPOSITORY:-libi/homebrew-tap}"
+          if [ -z "${TAG}" ]; then
+            echo "Release tag is required." >&2
+            exit 1
+          fi
+          case "${TAG}" in
+            v*) ;;
+            *)
+              echo "Release tag must start with 'v', got: ${TAG}" >&2
+              exit 1
+              ;;
+          esac
           curl -fsSL -o /tmp/ko-browser-src.tar.gz "https://github.com/libi/ko-browser/archive/refs/tags/${TAG}.tar.gz"
           SHA256=$(shasum -a 256 /tmp/ko-browser-src.tar.gz | awk '{print $1}')
 
