@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snapshot Nested Iframe Test</title>
+</head>
+<body>
+    <main>
+        <h1>Host Snapshot Page</h1>
+        <button type="button" onclick="window.hostStatus('host-clicked')">Host Action</button>
+        <div id="status" aria-live="polite">idle</div>
+        <iframe
+            title="Outer Frame"
+            style="width: 360px; height: 360px;"
+            srcdoc='<!DOCTYPE html>
+<html lang="en">
+<body>
+    <main>
+        <h2>Outer Frame Heading</h2>
+        <button type="button" id="outer-action">Outer Action</button>
+        <input aria-label="Outer Input" id="outer-input" />
+        <iframe title="Inner Frame" id="inner-frame" style="width: 320px; height: 220px;"></iframe>
+        <script>
+            document.getElementById("outer-action").addEventListener("click", function () {
+                window.top.hostStatus("outer-clicked");
+            });
+            document.getElementById("outer-input").addEventListener("input", function () {
+                window.top.hostFill("outer:" + this.value);
+            });
+            document.getElementById("inner-frame").srcdoc = `<!DOCTYPE html>
+<html lang="en">
+<body>
+    <main>
+        <h3>Inner Frame Heading</h3>
+        <button type="button" id="inner-action">Inner Action</button>
+        <input aria-label="Inner Input" id="inner-input" />
+        <p>Inner frame unique text</p>
+        <script>
+            document.getElementById("inner-action").addEventListener("dblclick", function () {
+                window.top.hostStatus("inner-double-clicked");
+            });
+            document.getElementById("inner-input").addEventListener("input", function () {
+                window.top.hostFill("inner:" + this.value);
+            });
+        <\/script>
+    </main>
+</body>
+</html>`;
+        </script>
+    </main>
+</body>
+</html>'>
+        </iframe>
+    </main>
+    <script>
+        window.hostStatus = function (value) {
+            document.getElementById('status').textContent = value;
+        };
+        window.hostFill = function (value) {
+            document.getElementById('status').textContent = value;
+        };
+    </script>
+</body>
+</html>

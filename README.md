@@ -16,7 +16,7 @@
   <a href="https://github.com/libi/ko-browser/releases"><img src="https://img.shields.io/github/v/release/libi/ko-browser?style=flat-square" alt="Release"></a>
   <a href="https://github.com/libi/ko-browser/actions"><img src="https://img.shields.io/github/actions/workflow/status/libi/ko-browser/ci.yml?style=flat-square" alt="CI"></a>
   <a href="https://pkg.go.dev/github.com/libi/ko-browser"><img src="https://pkg.go.dev/badge/github.com/libi/ko-browser.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/libi/ko-browser"><img src="https://goreportcard.com/badge/github.com/libi/ko-browser?style=flat-square" alt="Go Report Card"></a>
+  <a href="https://goreportcard.com/report/github.com/libi/ko-browser"><img src="https://goreportcard.com/badge/github.com/libi/ko-browser" alt="Go Report Card"></a>
 </p>
 
 ---
@@ -56,57 +56,63 @@ Its custom accessibility-tree snapshot format reduces prompt footprint by **46%+
 
 ## 📦 Installation
 
-### Choose an install path
+### macOS
 
-| Use case | Recommended path | Notes |
-|---------|------------------|-------|
-| macOS local usage | Homebrew | Installs an OCR-enabled build and pulls in `tesseract` |
-| Linux/macOS manual deployment | GitHub Releases | Download the prebuilt archive and make sure Tesseract runtime libraries are present |
-| Go-based integration or custom builds | From source | Best when embedding `kbr` into your own toolchain |
-
-### Homebrew
+Use Homebrew:
 
 ```bash
 brew tap libi/tap
 brew install ko-browser
+
+# or install directly without tapping first
+brew install libi/tap/ko-browser
 ```
 
-> Homebrew installs `kbr` with OCR enabled.
-> It pulls in `tesseract` automatically and builds from source.
+> This installs the OCR-enabled `kbr` build.
+> Homebrew also pulls in `tesseract` automatically.
+> The tap repository is [libi/homebrew-tap](https://github.com/libi/homebrew-tap).
 
-### Pre-built binaries
+### Windows
 
-Download from [GitHub Releases](https://github.com/libi/ko-browser/releases):
+Download the latest release package from [GitHub Releases](https://github.com/libi/ko-browser/releases), then unzip and run `kbr.exe`.
 
-> Release binaries are also built with OCR enabled.
-> Install Tesseract first so the runtime OCR libraries are available: `brew install tesseract` on macOS, `apt install libtesseract-dev` on Linux.
+```powershell
+Invoke-WebRequest -Uri https://github.com/libi/ko-browser/releases/latest/download/ko-browser-windows-amd64.zip -OutFile ko-browser-windows-amd64.zip
+Expand-Archive .\ko-browser-windows-amd64.zip -DestinationPath .\ko-browser
+.\ko-browser\kbr.exe --help
+```
+
+If you want to use `kbr` globally, move `kbr.exe` into a directory that is already in your `PATH`, or add the extracted folder to `PATH`.
+
+### Linux
+
+Download the latest release package from [GitHub Releases](https://github.com/libi/ko-browser/releases), extract it, and place `kbr` somewhere in your `PATH`.
 
 ```bash
-# macOS (Apple Silicon)
-curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-arm64.tar.gz
-tar xzf ko-browser-darwin-arm64.tar.gz
-mv kbr /usr/local/bin/kbr
-
-# macOS (Intel)
-curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-darwin-amd64.tar.gz
-tar xzf ko-browser-darwin-amd64.tar.gz
-mv kbr /usr/local/bin/kbr
-
-# Linux (amd64)
 curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-linux-amd64.tar.gz
 tar xzf ko-browser-linux-amd64.tar.gz
-mv kbr /usr/local/bin/kbr
+chmod +x kbr
+sudo mv kbr /usr/local/bin/kbr
 ```
 
-### From source
+Release binaries are built with OCR enabled, so make sure the Tesseract runtime is available on the host:
 
 ```bash
+sudo apt install libtesseract-dev
+```
+
+### Go install
+
+```bash
+# Install kbr without OCR
+go install github.com/libi/ko-browser/cmd/kbr@latest
+
 # Install kbr with OCR support (requires Tesseract to be installed)
 CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 ```
 
-> OCR is required for the published packages.
-> This requires Tesseract: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
+> Use the plain `go install` command if you only need the core browser automation features.
+> If you want OCR support, use the `-tags=ocr` variant and install Tesseract first: `brew install tesseract` (macOS) / `apt install libtesseract-dev` (Linux).
 
 ### Install Chrome (if not already installed)
 

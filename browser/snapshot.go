@@ -1,10 +1,14 @@
 package browser
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/chromedp/cdproto/dom"
+	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 	"github.com/libi/ko-browser/axtree"
 	"github.com/libi/ko-browser/ocr"
 )
@@ -35,6 +39,10 @@ func (b *Browser) Snapshot(opts ...SnapshotOptions) (*SnapshotResult, error) {
 	}
 
 	tree := axtree.BuildAndFilter(rawNodes)
+	totalRawCount := len(rawNodes)
+	if err := b.attachIframeContents(ctx, tree, &totalRawCount); err != nil {
+		return nil, err
+	}
 	if config.EnableOCR {
 		engine, err := ocr.NewEngine(normalizeOCRLanguages(config.OCRLanguages)...)
 		if err != nil {
@@ -55,7 +63,7 @@ func (b *Browser) Snapshot(opts ...SnapshotOptions) (*SnapshotResult, error) {
 	snap := &SnapshotResult{
 		Nodes:    tree,
 		IDMap:    axtree.BuildIDMap(tree),
-		RawCount: len(rawNodes),
+		RawCount: totalRawCount,
 	}
 
 	// Build format options
@@ -84,6 +92,102 @@ func (b *Browser) Snapshot(opts ...SnapshotOptions) (*SnapshotResult, error) {
 	b.lastSnap = snap
 
 	return snap, nil
+}
+
+func (b *Browser) attachIframeContents(ctx context.Context, tree []*axtree.Node, totalRawCount *int) error {
+	var frameTree *page.FrameTree
+	if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		var err error
+		frameTree, err = page.GetFrameTree().Do(ctx)
+		return err
+	})); err != nil {
+		return err
+	}
+	if frameTree == nil {
+		return nil
+	}
+	return b.attachChildFrameContents(ctx, tree, frameTree, totalRawCount)
+}
+
+func (b *Browser) attachChildFrameContents(ctx context.Context, tree []*axtree.Node, frameTree *page.FrameTree, totalRawCount *int) error {
+	if frameTree == nil {
+		return nil
+	}
+
+	for _, childFrame := range frameTree.ChildFrames {
+		if childFrame == nil || childFrame.Frame == nil {
+			continue
+		}
+
+		var ownerBackendID int64
+		if err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+			backendNodeID, _, err := dom.GetFrameOwner(childFrame.Frame.ID).Do(ctx)
+			ownerBackendID = int64(backendNodeID)
+			return err
+		})); err != nil {
+			return err
+		}
+
+		iframeNode := findNodeByBackendID(tree, ownerBackendID)
+		if iframeNode == nil {
+			continue
+		}
+
+		rawNodes, err := axtree.ExtractFrame(ctx, childFrame.Frame.ID)
+		if err != nil {
+			return err
+		}
+		*totalRawCount += len(rawNodes)
+
+		childTree := axtree.BuildAndFilter(rawNodes)
+		if err := b.attachChildFrameContents(ctx, childTree, childFrame, totalRawCount); err != nil {
+			return err
+		}
+
+		iframeNode.Children = append(iframeNode.Children, flattenDocumentRoots(childTree)...)
+	}
+
+	return nil
+}
+
+func findNodeByBackendID(nodes []*axtree.Node, backendID int64) *axtree.Node {
+	for _, node := range nodes {
+		if found := findNodeByBackendIDRecursive(node, backendID); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func findNodeByBackendIDRecursive(node *axtree.Node, backendID int64) *axtree.Node {
+	if node == nil {
+		return nil
+	}
+	if node.BackendID == backendID {
+		return node
+	}
+	for _, child := range node.Children {
+		if found := findNodeByBackendIDRecursive(child, backendID); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func flattenDocumentRoots(nodes []*axtree.Node) []*axtree.Node {
+	var flattened []*axtree.Node
+	for _, node := range nodes {
+		if node == nil {
+			continue
+		}
+		switch strings.ToLower(node.Role) {
+		case "rootwebarea", "webarea", "document":
+			flattened = append(flattened, flattenDocumentRoots(node.Children)...)
+		default:
+			flattened = append(flattened, node)
+		}
+	}
+	return flattened
 }
 
 // scopeSnapshotToSelector returns a snapshot text scoped to elements under the given CSS selector.

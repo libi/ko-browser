@@ -565,7 +565,10 @@ func TestState_Import_NonexistentFile(t *testing.T) {
 // ---------- Profile Option ----------
 
 func TestProfile_Option(t *testing.T) {
-	tmpDir := t.TempDir()
+	tmpDir, err := os.MkdirTemp("", "ko-browser-profile-*")
+	if err != nil {
+		t.Fatalf("MkdirTemp: %v", err)
+	}
 	profileDir := filepath.Join(tmpDir, "test-profile")
 
 	b, err := browser.New(browser.Options{
@@ -576,16 +579,27 @@ func TestProfile_Option(t *testing.T) {
 	if err != nil {
 		t.Fatalf("browser.New with profile: %v", err)
 	}
+	closed := false
+	closeBrowser := func() {
+		if !closed {
+			b.Close()
+			closed = true
+		}
+	}
+	t.Cleanup(func() {
+		closeBrowser()
+		removeDirEventually(t, tmpDir)
+	})
 
 	// Navigate to a page
 	if err := b.Open(testdataURL("phase7_test.html")); err != nil {
-		b.Close()
+		closeBrowser()
 		t.Fatalf("Open: %v", err)
 	}
 
 	// Set some data in localStorage
 	if _, err := b.Eval(`localStorage.setItem("profile_test", "yes")`); err != nil {
-		b.Close()
+		closeBrowser()
 		t.Fatalf("set localStorage: %v", err)
 	}
 
@@ -595,7 +609,7 @@ func TestProfile_Option(t *testing.T) {
 	}
 
 	t.Logf("Profile directory created at: %s", profileDir)
-	b.Close()
+	closeBrowser()
 }
 
 // ---------- Config File ----------

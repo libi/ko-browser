@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/accessibility"
 	"github.com/chromedp/chromedp"
 )
@@ -18,6 +19,17 @@ func Extract(ctx context.Context) ([]*accessibility.Node, error) {
 	err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
 		var err error
 		nodes, err = accessibility.GetFullAXTree().Do(ctx)
+		return err
+	}))
+	return nodes, err
+}
+
+// ExtractFrame fetches the accessibility tree for a specific frame.
+func ExtractFrame(ctx context.Context, frameID cdp.FrameID) ([]*accessibility.Node, error) {
+	var nodes []*accessibility.Node
+	err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		var err error
+		nodes, err = accessibility.GetFullAXTree().WithFrameID(frameID).Do(ctx)
 		return err
 	}))
 	return nodes, err

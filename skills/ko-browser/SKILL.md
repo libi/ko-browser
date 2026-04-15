@@ -6,19 +6,20 @@ allowed-tools: Bash(kbr:*)
 
 # Browser Automation with ko-browser
 
-The CLI uses Chrome/Chromium via CDP directly. Install via `go install github.com/libi/ko-browser/cmd/kbr@latest` or build from source. Run `kbr install` to verify Chrome is available, or `kbr install --with-deps` to auto-install it. Existing Chrome, Brave, and Chromium installations are detected automatically.
+The CLI uses Chrome/Chromium via CDP directly. Install it with Homebrew on macOS, download a release binary on Windows or Linux, or use `go install` if you want to build from source. Run `kbr install` to verify Chrome is available, or `kbr install --with-deps` to auto-install it. Existing Chrome, Brave, and Chromium installations are detected automatically.
 
 ## Installation
 
 ```bash
-# Install kbr binary directly (no CGO, no external dependencies)
+# macOS: install with Homebrew
+brew tap libi/tap
+brew install ko-browser
+
+# Go install: install kbr without OCR
 go install github.com/libi/ko-browser/cmd/kbr@latest
 
-# Or build from source
-git clone https://github.com/libi/ko-browser.git
-cd ko-browser
-go build -o kbr ./cmd/kbr/
-mv kbr /usr/local/bin/
+# Go install: install kbr with OCR support
+CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
 
 # Verify browser dependency
 kbr install
@@ -27,12 +28,25 @@ kbr install
 kbr install --with-deps
 ```
 
-> **OCR is optional.** The default install has zero CGO dependencies.
-> To enable `kbr snapshot --ocr`, rebuild with `-tags=ocr` (requires Tesseract):
-> ```bash
-> # Install Tesseract first: brew install tesseract (macOS) / apt install libtesseract-dev (Linux)
-> CGO_ENABLED=1 go install -tags=ocr github.com/libi/ko-browser/cmd/kbr@latest
-> ```
+**Platform-specific release installs:**
+
+```powershell
+# Windows: download the latest release package, unzip, and run kbr.exe
+Invoke-WebRequest -Uri https://github.com/libi/ko-browser/releases/latest/download/ko-browser-windows-amd64.zip -OutFile ko-browser-windows-amd64.zip
+Expand-Archive .\ko-browser-windows-amd64.zip -DestinationPath .\ko-browser
+.\ko-browser\kbr.exe --help
+```
+
+```bash
+# Linux: download the latest release package and place kbr in PATH
+curl -LO https://github.com/libi/ko-browser/releases/latest/download/ko-browser-linux-amd64.tar.gz
+tar xzf ko-browser-linux-amd64.tar.gz
+chmod +x kbr
+sudo mv kbr /usr/local/bin/kbr
+```
+
+> **OCR is optional for go install.** The plain `go install` command has no CGO dependency.
+> **Release binaries and Homebrew installs include OCR support.** To use OCR, make sure Tesseract is installed first: `brew install tesseract` on macOS, `apt install libtesseract-dev` on Linux.
 
 **Manual browser installation by OS:**
 

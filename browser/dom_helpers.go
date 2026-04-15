@@ -102,6 +102,34 @@ func (b *Browser) focusNode(ctx context.Context, backendID cdp.BackendNodeID) er
 func nodeCenter(ctx context.Context, backendID cdp.BackendNodeID) (float64, float64, error) {
 	var x, y float64
 	err := chromedp.Run(ctx, chromedp.ActionFunc(func(ctx context.Context) error {
+		remoteObj, err := dom.ResolveNode().WithBackendNodeID(backendID).Do(ctx)
+		if err == nil && remoteObj != nil {
+			res, callErr := callFunctionOnObject(ctx, remoteObj.ObjectID, `function() {
+				const rect = this.getBoundingClientRect();
+				let x = rect.left + rect.width / 2;
+				let y = rect.top + rect.height / 2;
+				let win = this.ownerDocument && this.ownerDocument.defaultView;
+				while (win && win.frameElement) {
+					const frameRect = win.frameElement.getBoundingClientRect();
+					x += frameRect.left;
+					y += frameRect.top;
+					win = win.parent;
+				}
+				return { x, y };
+			}`)
+			if callErr == nil && res != nil && res.Value != nil {
+				var point struct {
+					X float64 `json:"x"`
+					Y float64 `json:"y"`
+				}
+				if unmarshalErr := json.Unmarshal(res.Value, &point); unmarshalErr == nil {
+					x = point.X
+					y = point.Y
+					return nil
+				}
+			}
+		}
+
 		boxModel, err := dom.GetBoxModel().WithBackendNodeID(backendID).Do(ctx)
 		if err != nil {
 			return fmt.Errorf("get box model (backendID=%d): %w", backendID, err)

@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish to the Homebrew tap (for example: v0.1.1)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -12,6 +17,8 @@ permissions:
 jobs:
   brew:
     runs-on: ubuntu-latest
+    env:
+      HOMEBREW_TAP_REPOSITORY: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -21,22 +28,43 @@ jobs:
         run: |
           if [ -z "${HOMEBREW_TAP_GITHUB_TOKEN}" ]; then
             echo "HOMEBREW_TAP_GITHUB_TOKEN is not configured for this repository." >&2
-            echo "Add a token with write access to libi/homebrew-tap in Settings > Secrets and variables > Actions." >&2
+            echo "Add a token with write access to your Homebrew tap repository in Settings > Secrets and variables > Actions." >&2
+            exit 1
+          fi
+
+      - name: Validate tap repository
+        run: |
+          TAP_REPOSITORY="${HOMEBREW_TAP_REPOSITORY:-libi/homebrew-tap}"
+          if ! git ls-remote "https://github.com/${TAP_REPOSITORY}.git" >/dev/null 2>&1; then
+            echo "Homebrew tap repository not found: ${TAP_REPOSITORY}" >&2
+            echo "Create the repository first, then set Actions variable HOMEBREW_TAP_REPOSITORY if you are not using libi/homebrew-tap." >&2
             exit 1
           fi
 
       - name: Update Homebrew tap formula
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: |
+          TAP_REPOSITORY="${HOMEBREW_TAP_REPOSITORY:-libi/homebrew-tap}"
+          if [ -z "${TAG}" ]; then
+            echo "Release tag is required." >&2
+            exit 1
+          fi
+          case "${TAG}" in
+            v*) ;;
+            *)
+              echo "Release tag must start with 'v', got: ${TAG}" >&2
+              exit 1
+              ;;
+          esac
           curl -fsSL -o /tmp/ko-browser-src.tar.gz "https://github.com/libi/ko-browser/archive/refs/tags/${TAG}.tar.gz"
           SHA256=$(shasum -a 256 /tmp/ko-browser-src.tar.gz | awk '{print $1}')
 
-          git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/libi/homebrew-tap.git" /tmp/homebrew-tap
+          git clone "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/${TAP_REPOSITORY}.git" /tmp/homebrew-tap
           mkdir -p /tmp/homebrew-tap/Formula
 
-          ./scripts/render-homebrew-formula.sh "${TAG}" "${SHA256}" > /tmp/homebrew-tap/Formula/ko-browser.rb
+          bash ./scripts/render-homebrew-formula.sh "${TAG}" "${SHA256}" > /tmp/homebrew-tap/Formula/ko-browser.rb
 
           cd /tmp/homebrew-tap
           git config user.name "github-actions[bot]"
