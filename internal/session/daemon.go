@@ -7,6 +7,8 @@ import (
 	"io"
 	"net"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/libi/ko-browser/browser"
 )
@@ -47,33 +49,88 @@ func RunDaemon(opts Options) error {
 	}
 	defer b.Close()
 
+	// Write pidfile so that `status` can detect us without a socket ping.
+	if pidErr := writePidfile(opts.Name, opts.Headed); pidErr != nil {
+		return fmt.Errorf("write pidfile: %w", pidErr)
+	}
+	defer removePidfile(opts.Name)
+
+	var (
+		opMu      sync.Mutex
+		wg        sync.WaitGroup
+		done      = make(chan struct{})
+		closeOnce sync.Once
+	)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				return nil
+			select {
+			case <-done:
+			default:
+				if !errors.Is(err, net.ErrClosed) {
+					continue
+				}
 			}
-			continue
-		}
-
-		exit, _ := handleConn(conn, b, opts.Name, confirmStore)
-		conn.Close()
-		if exit {
+			wg.Wait()
 			return nil
 		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer conn.Close()
+
+			// Read request with a short deadline to avoid blocking
+			// on zombie connections that connect but never send data.
+			_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+			var req Request
+			if decErr := json.NewDecoder(conn).Decode(&req); decErr != nil {
+				if !errors.Is(decErr, io.EOF) {
+					_ = json.NewEncoder(conn).Encode(Response{OK: false, Error: decErr.Error()})
+				}
+				return
+			}
+			_ = conn.SetReadDeadline(time.Time{})
+
+			// Close command has the highest priority.
+			// Respond immediately and shut down — never blocked by in-flight operations.
+			if req.Command == "close" {
+				_ = json.NewEncoder(conn).Encode(Response{OK: true})
+				closeOnce.Do(func() {
+					close(done)
+					listener.Close()
+				})
+				return
+			}
+
+			// Reject new commands if shutdown is already in progress.
+			select {
+			case <-done:
+				_ = json.NewEncoder(conn).Encode(Response{OK: false, Error: "session closing"})
+				return
+			default:
+			}
+
+			// Serialize browser operations — the browser is not concurrency-safe.
+			opMu.Lock()
+			defer opMu.Unlock()
+
+			// Re-check shutdown after acquiring the lock.
+			select {
+			case <-done:
+				_ = json.NewEncoder(conn).Encode(Response{OK: false, Error: "session closing"})
+				return
+			default:
+			}
+
+			_ = conn.SetDeadline(time.Now().Add(opts.Timeout + 5*time.Second))
+			handleRequest(conn, b, opts.Name, confirmStore, req)
+		}()
 	}
 }
 
-func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmStore *ConfirmStore) (bool, error) {
-	var req Request
-	if err := json.NewDecoder(conn).Decode(&req); err != nil {
-		if errors.Is(err, io.EOF) {
-			return false, nil
-		}
-		_ = json.NewEncoder(conn).Encode(Response{OK: false, Error: err.Error()})
-		return false, err
-	}
-
+func handleRequest(conn net.Conn, b *browser.Browser, sessionName string, confirmStore *ConfirmStore, req Request) {
 	resp := Response{OK: true}
 	var err error
 
@@ -169,11 +226,6 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 			break
 		}
 		err = b.DblClick(req.ID)
-	case "close":
-		if encodeErr := json.NewEncoder(conn).Encode(resp); encodeErr != nil {
-			return true, encodeErr
-		}
-		return true, nil
 
 	case "back":
 		err = b.Back()
@@ -828,8 +880,5 @@ func handleConn(conn net.Conn, b *browser.Browser, sessionName string, confirmSt
 		resp.Error = err.Error()
 	}
 
-	if encodeErr := json.NewEncoder(conn).Encode(resp); encodeErr != nil {
-		return false, encodeErr
-	}
-	return false, err
+	_ = json.NewEncoder(conn).Encode(resp)
 }

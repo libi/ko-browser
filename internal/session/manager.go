@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/libi/ko-browser/browser"
@@ -784,11 +785,31 @@ func (c *Client) Deny(id string) error {
 }
 
 func (c *Client) Close() error {
-	_, err := c.call(Request{Command: "close"}, false)
-	if err != nil && isConnectionError(err) {
+	conn, err := net.DialTimeout("unix", socketPath(c.opts.Name), 2*time.Second)
+	if err != nil {
+		// Cannot connect — daemon already stopped or not running.
+		// Clean up stale socket file if present.
+		_ = os.Remove(socketPath(c.opts.Name))
 		return nil
 	}
-	return err
+	defer conn.Close()
+
+	// Use a short deadline — close responds instantly on the daemon side.
+	_ = conn.SetDeadline(time.Now().Add(5 * time.Second))
+
+	if err := json.NewEncoder(conn).Encode(&Request{Command: "close"}); err != nil {
+		return nil
+	}
+
+	var resp Response
+	if err := json.NewDecoder(conn).Decode(&resp); err != nil {
+		// Read error likely means daemon shut down, which is the desired outcome.
+		return nil
+	}
+	if !resp.OK {
+		return errors.New(resp.Error)
+	}
+	return nil
 }
 
 func (c *Client) call(req Request, autoStart bool) (Response, error) {
@@ -882,13 +903,31 @@ func (c *Client) startDaemon() error {
 	}
 
 	cmd := exec.Command(executable, args...)
+
+	// Fully detach the daemon from the parent process so it survives
+	// after the CLI (or the agent that spawned it) exits:
+	//  - Setsid: create a new session / process group
+	//  - Redirect stdio to /dev/null to avoid broken-pipe on parent exit
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
 	if c.opts.Debug {
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
+	} else {
+		devNull, _ := os.Open(os.DevNull)
+		if devNull != nil {
+			cmd.Stdin = devNull
+			cmd.Stdout = devNull
+			cmd.Stderr = devNull
+			// devNull will be closed by the OS when the child process execs
+		}
 	}
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start daemon: %w", err)
 	}
+	// Release the process so the parent doesn't wait for it.
+	_ = cmd.Process.Release()
 
 	return c.waitForDaemon()
 }

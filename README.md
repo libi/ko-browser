@@ -234,7 +234,8 @@ func main() {
 | **select** | `kbr select <id> "val"` | `b.Select(id, vals...)` |
 | **scroll** | `kbr scroll down 500` | `b.Scroll("down", 500)` |
 | **drag** | `kbr drag <src> <dst>` | `b.Drag(srcID, dstID)` |
-| **close** | `kbr close` | `b.Close()` |
+| **stop** | `kbr stop` (alias: `close`) | `b.Close()` |
+| **status** | `kbr status` | `session.GetStatus(name)` |
 
 ### Keyboard
 
@@ -445,8 +446,11 @@ kbr auth delete github
 ### Session Management
 
 ```bash
-kbr session                      # show current session
+kbr session                      # show current session status
 kbr session list                 # list all active sessions
+kbr status                       # daemon & browser process status
+kbr stop                         # stop browser session (alias: close)
+kbr restart                      # restart browser session
 kbr --session test open example.com  # use named session
 ```
 

@@ -143,10 +143,11 @@ kbr --session agent2 open https://site-b.com
 ## Essential Commands
 
 ```bash
-# Navigation
+# Navigation & Session
 kbr open <url>                        # Navigate to URL
-kbr close                             # Close browser session (alias: stop)
+kbr stop                              # Stop browser session (alias: close), highest priority
 kbr restart                           # Restart browser session
+kbr status                            # Show daemon & browser status (works even if daemon is down)
 kbr back                              # Go back in history
 kbr forward                           # Go forward in history
 kbr reload                            # Reload current page
@@ -274,9 +275,12 @@ kbr tab new https://other.com         # Open new tab
 kbr tab switch 1                      # Switch to tab by index
 kbr tab close 1                       # Close tab by index
 
-# Sessions
-kbr session                           # Show current session name
+# Sessions & Status
+kbr session                           # Show current session status (daemon + browser)
 kbr session list                      # List all active sessions
+kbr status                            # Show daemon & browser process status (works even if daemon is down)
+kbr stop                              # Stop browser session immediately (alias: close)
+kbr restart                           # Restart browser session
 
 # Cookies
 kbr cookies get                       # Get all cookies
@@ -569,16 +573,23 @@ When running multiple agents concurrently, use named sessions to avoid conflicts
 kbr --session agent1 open site-a.com
 kbr --session agent2 open site-b.com
 
-# Check active sessions
+# Check active sessions and their status
 kbr session list
+kbr status                            # Daemon PID, uptime, browser mode
+kbr status --json                     # Machine-readable status output
 ```
 
 Always close your session when done to avoid leaked daemon processes:
 
 ```bash
-kbr close                             # Close default session
-kbr --session agent1 close            # Close specific session
+kbr stop                              # Stop default session (alias: close)
+kbr --session agent1 stop             # Stop specific session
 ```
+
+**Daemon architecture notes:**
+- The daemon runs as a fully detached background process (new session, stdio redirected to /dev/null). It survives after the parent CLI or agent process exits.
+- `kbr stop` has the highest priority — it responds immediately even if the daemon is busy with a long-running operation (e.g., waiting for a slow page to load).
+- `kbr status` works independently of the daemon. It reads the daemon's pidfile and checks process liveness, so it returns useful info even when the daemon is unresponsive or crashed.
 
 ## Security
 

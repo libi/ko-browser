@@ -13,15 +13,11 @@ func init() {
 		Use:   "session",
 		Short: "Display or manage browser sessions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Default behavior: show current session name
-			name := rootFlags.session
+			info := session.GetStatus(rootFlags.session)
 			if rootFlags.json {
-				return printResult("", map[string]any{
-					"session": name,
-				})
+				return printResult("", info)
 			}
-			fmt.Printf("Current session: %s\n", name)
-			return nil
+			return printResult(session.FormatStatus(info), nil)
 		},
 	}
 

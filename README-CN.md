@@ -222,7 +222,8 @@ func main() {
 | **下拉选择** | `kbr select <id> "值"` | `b.Select(id, vals...)` |
 | **滚动** | `kbr scroll down 500` | `b.Scroll("down", 500)` |
 | **拖拽** | `kbr drag <源> <目标>` | `b.Drag(srcID, dstID)` |
-| **关闭** | `kbr close` | `b.Close()` |
+| **停止** | `kbr stop`（别名: `close`）| `b.Close()` |
+| **状态** | `kbr status` | `session.GetStatus(name)` |
 
 ### 快照与截图
 
@@ -291,6 +292,17 @@ kbr wait text "欢迎"              # 等待文本出现
 kbr wait fn "window.ready"       # 等待 JS 表达式为真
 kbr wait hidden "#spinner"       # 等待元素隐藏
 kbr wait download ./file.pdf     # 等待下载完成
+```
+
+### 会话管理
+
+```bash
+kbr session                      # 查看当前会话状态
+kbr session list                 # 列出所有活跃会话
+kbr status                       # 查看 daemon 与浏览器进程状态
+kbr stop                         # 停止浏览器会话（别名: close）
+kbr restart                      # 重启浏览器会话
+kbr --session test open example.com  # 使用命名会话
 ```
 
 ### 多标签页
