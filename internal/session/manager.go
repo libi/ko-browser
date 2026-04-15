@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/libi/ko-browser/browser"
@@ -905,10 +904,9 @@ func (c *Client) startDaemon() error {
 	cmd := exec.Command(executable, args...)
 
 	// Fully detach the daemon from the parent process so it survives
-	// after the CLI (or the agent that spawned it) exits:
-	//  - Setsid: create a new session / process group
-	//  - Redirect stdio to /dev/null to avoid broken-pipe on parent exit
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	// after the CLI (or the agent that spawned it) exits.
+	// Platform-specific: Setsid on Unix, CREATE_NEW_PROCESS_GROUP on Windows.
+	setDaemonSysProcAttr(cmd)
 
 	if c.opts.Debug {
 		cmd.Stdout = os.Stderr
